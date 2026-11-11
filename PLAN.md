@@ -56,6 +56,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/grafico.js` — histórico real + abanico simulado (banda 5–95 %, mediana, hover)
 - `js/app.js` — navegación, piezas comunes (formulario de datos, lectura) y módulo GBM
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
+- `js/ou.js` — módulo de Ornstein-Uhlenbeck
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
 - `datos/cache/` — se crea solo al descargar
 
@@ -71,7 +72,10 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
   por umbral |r − x̄| > c·s con slider de c; histograma de retornos reales y tabla de
   días de salto con columna `[completar]` para la noticia de cada día.
   Limitación documentada: el umbral subestima λ (prueba simulada: λ=4 → λ̂≈2.8).
-- **F3**: OU (subir κ → la banda deja de crecer como √t; calibración sobre TRM o una tasa)
+- **F3 — hecho (11 nov), en revisión del equipo**: OU con la notación y la solución en
+  distribución del primer taller (ej. 3 de liquidez como ejemplo inicial; responde sus
+  preguntas a 3, 6 y 12 meses). Banda sin reversión (κ = 0) en punteado, θ como línea.
+  Calibración AR(1); atajos VIX y TRM.
 - **F4**: fBm (slider H con las mismas Z; Hurst estimado sobre la serie cargada)
 - **F5**: Manada (Kirman: ε cambio propio, δ imitación; GameStop 2021 y S&P 2007-09)
 - **F6**: Opciones reales (propuesta, por confirmar con lo visto en clase):

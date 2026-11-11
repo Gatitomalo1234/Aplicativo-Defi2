@@ -64,8 +64,8 @@
 
   <p class="nota">Convención del aplicativo: los modelos de precio se simulan con la
   transición exacta del taller de valoración, S(t+Δt) = S(t)·exp[(μ − σ²/2)Δt + σ√Δt·Z],
-  que garantiza precios positivos; Ornstein-Uhlenbeck, que modela un nivel, usa el
-  esquema de Euler-Maruyama de las diapositivas. Todos con dt = 1/252 y con <em>las mismas</em> normales
+  que garantiza precios positivos; Ornstein-Uhlenbeck, que modela un nivel, usa su
+  solución en distribución, la del primer taller. Todos con dt = 1/252 y con <em>las mismas</em> normales
   Z bajo semilla fija. Al mover un parámetro, el cambio que se ve en las trayectorias
   es atribuible al parámetro, no al azar.</p>
 </section>
@@ -75,7 +75,7 @@
   <p class="bajada">El punto de partida: un mercado sin memoria, sin eventos y sin pánico.</p>
 
   <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">dS = μ · S · dt &nbsp;+&nbsp; σ · S · dW</p>
+  <p class="ecuacion">dS = μ · S · dt &nbsp;+&nbsp; σ · S · dB</p>
   <p>Para simular se usa la solución exacta (lema de Itô sobre ln S), paso a paso:</p>
   <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z]</p>
   <ul class="parametros">
@@ -139,7 +139,7 @@
   <p class="bajada">Rompe la continuidad: el mercado también se mueve a saltos.</p>
 
   <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">dS / S = (μ − λk) · dt &nbsp;+&nbsp; σ · dW &nbsp;+&nbsp; dJ</p>
+  <p class="ecuacion">dS / S = (μ − λk) · dt &nbsp;+&nbsp; σ · dB &nbsp;+&nbsp; dJ</p>
   <p>Para simular, cada día, con las mismas Z del GBM:</p>
   <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − λk − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z &nbsp;+&nbsp; Y]</p>
   <ul class="parametros">
@@ -232,15 +232,80 @@
 <section id="ou" hidden>
   <h1>Ornstein-Uhlenbeck</h1>
   <p class="bajada">Rompe el drift constante: hay fuerzas que jalan al equilibrio.</p>
-  <div class="pendiente">
-    <p>Fase 3. Claves del módulo:</p>
-    <ul>
-      <li>κ como velocidad de corrección: subir κ y ver cómo la banda deja de crecer
-          como √t y se estabiliza (comparación directa con el GBM, mismas Z).</li>
-      <li>θ como equilibrio de largo plazo. Candidata de serie real: TRM o una tasa.</li>
-      <li>Conexión con el ejercicio de liquidez del curso (dX = κ(θ−X)dt + σdB).</li>
-    </ul>
+
+  <h2>La ecuación, símbolo a símbolo</h2>
+  <p class="ecuacion">dX(t) = κ (θ − X(t)) dt &nbsp;+&nbsp; σ dB(t)</p>
+  <p>Es la notación del primer taller (ejercicio 3, liquidez de una firma). La ley de X(t)
+  que usamos allá es la misma con la que se simula aquí, día a día:</p>
+  <p class="ecuacion">X(t) ~ N( m(t), v(t) )<br>
+  m(t) = θ + (X(0) − θ)·e<sup>−κt</sup><br>
+  v(t) = σ²/(2κ) · (1 − e<sup>−2κt</sup>)</p>
+  <ul class="parametros">
+    <li><b>X</b> — un nivel, no un precio: liquidez, una tasa, el VIX. Puede ser negativo.</li>
+    <li><b>θ</b> — el equilibrio de largo plazo hacia el que vuelve X.</li>
+    <li><b>κ</b> — la velocidad de corrección. Si X está lejos de θ, el término κ(θ − X)
+        lo empuja de vuelta. Con κ = 0 no hay reversión.</li>
+    <li><b>σ</b> — el tamaño del ruido.</li>
+  </ul>
+  <p class="aclaracion">El aplicativo trabaja en años (dt = 1/252); los sliders muestran
+  también κ y σ por mes, como en el taller. En las diapositivas el mismo modelo aparece
+  como dh = γ(α − h)dt + ω dW: γ es κ, α es θ y ω es σ.</p>
+
+  <h2>Datos de mercado</h2>
+  <form class="datos-mercado" id="ou-form">
+    <label>Ticker de Yahoo Finance
+      <input type="text" id="ou-ticker" class="ticker" value="^VIX" autocomplete="off" spellcheck="false">
+    </label>
+    <label>Desde <input type="date" id="ou-desde"></label>
+    <label>Hasta <input type="date" id="ou-hasta"></label>
+    <button type="submit" id="ou-cargar">Cargar y calibrar</button>
+    <span class="atajos">
+      <button type="button" data-ticker="^VIX">VIX</button>
+      <button type="button" data-ticker="COP=X">TRM</button>
+      <button type="button" id="ou-ejemplo">Ejemplo del taller</button>
+    </span>
+  </form>
+  <p class="estado" id="ou-estado" role="status">Sin datos cargados: el simulador muestra el
+  ejercicio 3 del taller (liquidez en millones de USD).</p>
+  <div class="calibracion" id="ou-calibracion" hidden></div>
+
+  <h2>Simulador</h2>
+  <div class="simulador">
+    <div class="controles">
+      <label>κ velocidad de corrección <output id="ou-kappa-out"></output>
+        <input type="range" id="ou-kappa">
+      </label>
+      <label>θ equilibrio <output id="ou-theta-out"></output>
+        <input type="range" id="ou-theta">
+      </label>
+      <label>σ ruido <output id="ou-sigma-out"></output>
+        <input type="range" id="ou-sigma">
+      </label>
+      <label>horizonte <output id="ou-dias-out">252 días</output>
+        <input type="range" id="ou-dias" min="21" max="504" step="21" value="252">
+      </label>
+      <label>trayectorias <output id="ou-n-out">200</output>
+        <input type="range" id="ou-n" min="20" max="400" step="20" value="200">
+      </label>
+      <button id="ou-sin-reversion" type="button">κ = 0 (sin reversión)</button>
+      <button id="ou-semilla" type="button">Cambiar semilla</button>
+      <button id="ou-reiniciar" type="button">Modo sustentación</button>
+      <p class="aclaracion">Con horizonte de 63, 126 y 252 días (3, 6 y 12 meses) la lectura
+      responde las preguntas del ejercicio 3: la ley de X(t) y P(X(t) &lt; 0).</p>
+    </div>
+    <div class="panel-grafico">
+      <canvas id="ou-canvas"></canvas>
+      <p class="lectura" id="ou-lectura"></p>
+    </div>
   </div>
+
+  <h2>Qué explica y qué no</h2>
+  <ul class="honesto">
+    <li>Explica bien: <em>[completar con nuestras palabras: por qué el VIX vuelve a su nivel,
+        qué significa la vida media para alguien que opera volatilidad]</em></li>
+    <li>No explica: <em>[completar: el resultado de la TRM; que X puede volverse negativo
+        (por eso existe el modelo CIR para tasas); θ y κ constantes en el tiempo]</em></li>
+  </ul>
 </section>
 
 <section id="fbm" hidden>
@@ -309,5 +374,6 @@
 <script src="js/grafico.js"></script>
 <script src="js/app.js"></script>
 <script src="js/merton.js"></script>
+<script src="js/ou.js"></script>
 </body>
 </html>

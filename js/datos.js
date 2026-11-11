@@ -114,3 +114,40 @@ function calibrarMerton(precios, fechas, c = 3) {
     sigmaTotal: s * Math.sqrt(DIAS_HABILES), // la σ que vería el GBM, para comparar
   };
 }
+
+// Calibración de Ornstein-Uhlenbeck: regresión AR(1) por mínimos cuadrados.
+//   La solución del taller, a un paso de Δt = 1 día, es una regresión lineal:
+//     X(t+Δt) = a + b·X(t) + ε,   con  b = e^(−κΔt),  a = θ(1 − b),
+//     Var(ε) = σ²/(2κ)·(1 − b²)
+//   Se estiman â, b̂ y s_ε (desviación de los residuos, con n − 2) y se despeja:
+//     κ̂ = −ln(b̂)/Δt,   θ̂ = â/(1 − b̂),   σ̂ = s_ε·√(2κ̂/(1 − b̂²))
+//   Vida media: ln 2 / κ̂ — tiempo en que se cierra la mitad de la distancia a θ.
+//   Si b̂ ≥ 1 no hay reversión que estimar: se reporta y κ̂ = 0.
+
+function calibrarOU(valores) {
+  const x = valores.slice(0, -1), y = valores.slice(1);
+  const n = x.length;
+  const mx = x.reduce((s, v) => s + v, 0) / n;
+  const my = y.reduce((s, v) => s + v, 0) / n;
+  let sxy = 0, sxx = 0;
+  for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; }
+  const b = sxy / sxx;
+  const a = my - b * mx;
+  let sse = 0;
+  for (let i = 0; i < n; i++) sse += (y[i] - a - b * x[i]) ** 2;
+  const sEps = Math.sqrt(sse / (n - 2));
+
+  const x0 = valores[valores.length - 1];
+  const base = { a, b, sEps, n, x0, minimo: Math.min(...valores), maximo: Math.max(...valores) };
+  if (!(b > 0 && b < 1)) {
+    // sin reversión: browniano sin deriva, σ̂ = s_ε/√Δt; θ no se puede estimar
+    return { ...base, reversion: false, kappa: 0, theta: x0, sigma: sEps / Math.sqrt(DT), vidaMediaDias: Infinity };
+  }
+  const kappa = -Math.log(b) / DT;
+  return {
+    ...base, reversion: true, kappa,
+    theta: a / (1 - b),
+    sigma: sEps * Math.sqrt((2 * kappa) / (1 - b * b)),
+    vidaMediaDias: (Math.LN2 / kappa) * DIAS_HABILES,
+  };
+}

@@ -8,12 +8,13 @@
 //   Garantiza precios positivos con cualquier parámetro (Euler sobre S no: con
 //   volatilidad alta puede dar precios negativos).
 // - Ornstein-Uhlenbeck: es un NIVEL (tasa, spread), puede ser negativo; se usa
-//   Euler-Maruyama, el esquema de las diapositivas del curso.
+//   su solución en distribución, la del primer taller (también exacta).
+// Notación de los talleres: el browniano es B(t).
 
 const DT = 1 / 252; // un día hábil, en años
 
 // 1. Browniano geométrico (punto de partida)
-//    dS = mu*S*dt + sigma*S*dW   ->   ln S sube (mu - sigma²/2)dt + sigma*dW
+//    dS = mu*S*dt + sigma*S*dB   ->   ln S sube (mu - sigma²/2)dt + sigma*dB
 function simularGBM({ s0, mu, sigma }, Z) {
   const deriva = (mu - (sigma * sigma) / 2) * DT;
   const difusion = sigma * Math.sqrt(DT);
@@ -47,7 +48,7 @@ function azarDeSaltos(semilla, nCaminos, nPasos) {
 }
 
 // 2. Saltos de Merton (rompe la continuidad)
-//    dS/S = (mu - lambda*k)dt + sigma*dW + dJ,   salto: S -> S·e^Y, Y ~ N(muJ, sigmaJ²)
+//    dS/S = (mu - lambda*k)dt + sigma*dB + dJ,   salto: S -> S·e^Y, Y ~ N(muJ, sigmaJ²)
 //    k = E[e^Y - 1] = exp(muJ + sigmaJ²/2) - 1 es la compensación: con ella, mu sigue
 //    siendo el retorno esperado total, y el retorno medio no cambia al mover lambda
 //    (cambia el riesgo, no la tendencia).
@@ -74,18 +75,44 @@ function simularMerton({ s0, mu, sigma, lambda, muJ, sigmaJ, semillaSaltos = 777
 }
 
 // 3. Ornstein-Uhlenbeck (rompe el drift constante)
-//    dX = kappa*(theta - X)*dt + sigma*dW
-//    X es un nivel (una tasa, un spread), no un precio: puede simularse directo.
+//    dX(t) = κ(θ − X(t))dt + σ dB(t)     (notación del primer taller, ejercicio 3)
+//    X es un nivel (liquidez, una tasa, el VIX), no un precio: puede ser negativo.
+//    Se simula con la solución en distribución del taller, aplicada paso a paso:
+//      X(t+Δt) = θ + (X(t) − θ)·e^(−κΔt) + √[σ²/(2κ)·(1 − e^(−2κΔt))] · Z
+//    Con κ = 0 no hay reversión: X(t+Δt) = X(t) + σ√Δt·Z (browniano sin deriva).
 function simularOU({ x0, kappa, theta, sigma }, Z) {
+  const sinReversion = kappa < 1e-9;
+  const e = Math.exp(-kappa * DT);
+  const sd = sinReversion
+    ? sigma * Math.sqrt(DT)
+    : Math.sqrt(((sigma * sigma) / (2 * kappa)) * (1 - Math.exp(-2 * kappa * DT)));
   return Z.map((z) => {
     const n = z.length;
     const X = new Float64Array(n + 1);
     X[0] = x0;
     for (let j = 0; j < n; j++) {
-      X[j + 1] = X[j] + kappa * (theta - X[j]) * DT + sigma * Math.sqrt(DT) * z[j];
+      X[j + 1] = sinReversion ? X[j] + sd * z[j] : theta + (X[j] - theta) * e + sd * z[j];
     }
     return X;
   });
+}
+
+// Ley de X(t) del taller: X(t) ~ N(m(t), v(t)),
+//   m(t) = θ + (X(0) − θ)e^(−κt),   v(t) = σ²/(2κ)·(1 − e^(−2κt))   (t en años)
+function momentosOU({ x0, kappa, theta, sigma }, t) {
+  if (kappa < 1e-9) return { m: x0, v: sigma * sigma * t };
+  return {
+    m: theta + (x0 - theta) * Math.exp(-kappa * t),
+    v: ((sigma * sigma) / (2 * kappa)) * (1 - Math.exp(-2 * kappa * t)),
+  };
+}
+
+// Φ(x), la acumulada de la normal estándar (Abramowitz y Stegun 7.1.26, error < 1.5e-7)
+function normalAcumulada(x) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+  const poli = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  const erf = 1 - poli * Math.exp(-(x * x) / 2);
+  return x >= 0 ? 0.5 * (1 + erf) : 0.5 * (1 - erf);
 }
 
 // 4. Browniano fraccional (rompe la independencia de incrementos)

@@ -16,7 +16,8 @@ SERIES = [
     ("NVDA", "2023-01-01", HOY),           # GBM / Merton: saltos en earnings
     ("GME", "2020-06-01", "2021-06-30"),   # Manada: caso GameStop
     ("^GSPC", "2006-01-01", "2009-12-31"), # Manada / Merton: crisis subprime
-    ("COP=X", "2020-01-01", HOY),          # OU: TRM, candidata a reversión
+    ("COP=X", "2020-01-01", HOY),          # OU: TRM, contraste con el VIX
+    ("^VIX", "2020-01-01", HOY),           # OU: VIX, reversión a la media
 ]
 
 for ticker, desde, hasta in SERIES:

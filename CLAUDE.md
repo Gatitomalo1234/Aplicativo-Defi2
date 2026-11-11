@@ -50,11 +50,19 @@ Machine learning: fuera del aplicativo por ahora.
 - Primero que todo funcione; el diseño visual se pule al final (fase 8).
 - Esquema de simulación (11 nov): modelos de PRECIO (GBM, Merton, fBm, manada) con
   transición exacta en logaritmos, como el taller (precios siempre positivos; con
-  Euler el fBm con H bajo daba precios negativos). OU (nivel) con Euler-Maruyama,
-  como las diapositivas. Merton compensado (μ − λk) y con azar de saltos fijo por
+  Euler el fBm con H bajo daba precios negativos). OU con su solución en distribución
+  (primer taller, ej. 3). Ya no se usa Euler en ningún modelo. Merton compensado (μ − λk) y con azar de saltos fijo por
   día: subir λ solo agrega saltos. fBm geométrico: exp[μt − σ²t^(2H)/2 + σB_H(t)],
   la media no cambia con H. Revisar que el equipo pueda sustentarlo.
 - Versión controlada con git (repo local, sin remoto). `datos/cache/` no se versiona.
+- Notación de los talleres: browniano B(t) (dB, no dW). OU como en el primer taller:
+  dX(t) = κ(θ − X(t))dt + σ dB(t). Equivalencia con diapositivas (γ, α, ω) puesta como
+  nota — **verificar contra diap. 134 cuando esté el PDF de las diapositivas**.
+- OU: series VIX (vida media ~7 días) y TRM (vida media ~160 días con 3 años de datos).
+  Calibración AR(1) con b = e^(−κΔt). Se decidió NO incluir la prueba de Dickey-Fuller
+  (no se vio en clase): ojo, con b̂ cercano a 1 el κ̂ es poco preciso.
+- Orden de trabajo acordado (11 nov): terminar todos los modelos → diseño (F8) →
+  revisar cada modelo en detalle y escribir los textos `[completar]`.
 
 ## Pendiente de decidir
 
@@ -99,4 +107,5 @@ el servidor solo entrega index.html, css/, js/ y contexto/.
 Fase 2 (Merton) hecha el 11 nov, pendiente de revisión del equipo. Cada módulo es un
 archivo propio que se registra en `MODULOS` (app.js) y reutiliza `conectarFormularioDatos`.
 Manada y opciones reales se deciden cuando toque esa fase.
-Siguiente: revisión de F2 → F3 (OU).
+F3 (OU) hecha el 11 nov, pendiente de revisión.
+Siguiente: revisión de F3 → F4 (browniano fraccional).

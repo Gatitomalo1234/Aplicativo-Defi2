@@ -1,0 +1,169 @@
+// ou.js — módulo 3: Ornstein-Uhlenbeck (rompe el drift constante).
+// Notación del primer taller (ejercicio 3): dX(t) = κ(θ − X(t))dt + σ dB(t).
+// - Sin datos arranca en el ejercicio de liquidez del taller (κ = 0.30/mes,
+//   θ = 2.5, σ = 0.40, X(0) = 1.2), pasado a años porque el aplicativo usa dt = 1/252.
+// - La línea punteada es el mismo proceso sin reversión (κ = 0) con las mismas Z:
+//   ahí se ve cómo κ frena el crecimiento de la banda.
+// - Con datos: regresión AR(1) (ver calibrarOU en datos.js).
+
+const EJEMPLO_OU = { x0: 1.2, kappa: 0.3 * 12, theta: 2.5, sigma: 0.4 * Math.sqrt(12) };
+let mercadoOU = null; // { datos, cal } cuando hay una serie cargada
+
+const fmtProb = (p) =>
+  p === 0 ? "0 %" : p < 0.001 ? `${(p * 100).toPrecision(2)} %` : `${(p * 100).toFixed(1)} %`;
+
+// cifras según la escala de la serie (liquidez ~2, VIX ~20, TRM ~4000)
+function formatoNivelOU() {
+  const base = mercadoOU ? mercadoOU.cal : EJEMPLO_OU;
+  const escala = Math.max(Math.abs(base.x0), Math.abs(base.theta));
+  return (v) => (escala >= 1000 ? v.toFixed(0) : escala >= 10 ? v.toFixed(1) : v.toFixed(2));
+}
+
+function configurarSlider(id, min, max, valor) {
+  const el = $(id);
+  el.min = min; el.max = max; el.step = (max - min) / 1000;
+  el.value = valor;
+}
+
+// rangos de los sliders según la serie (o el ejemplo) y fija los valores base
+function fijarParametrosOU(base, minimo = base.x0, maximo = base.x0) {
+  const lo = Math.min(minimo, base.theta, base.x0), hi = Math.max(maximo, base.theta, base.x0);
+  const span = hi - lo || Math.abs(hi) || 1;
+  configurarSlider("ou-kappa", 0, Math.max(20, 3 * base.kappa), base.kappa);
+  configurarSlider("ou-theta", lo - span, hi + span, base.theta);
+  configurarSlider("ou-sigma", 0, 3 * base.sigma || 1, base.sigma);
+}
+
+function leerControlesOU() {
+  const f = formatoNivelOU();
+  const c = {
+    kappa: parseFloat($("ou-kappa").value), theta: parseFloat($("ou-theta").value),
+    sigma: parseFloat($("ou-sigma").value),
+    dias: parseInt($("ou-dias").value, 10), n: parseInt($("ou-n").value, 10),
+  };
+  // en años y, entre paréntesis, en meses como en el taller (κ/12, σ/√12)
+  $("ou-kappa-out").textContent = `${c.kappa.toFixed(2)} /año (${(c.kappa / 12).toFixed(3)} /mes)`;
+  $("ou-theta-out").textContent = f(c.theta);
+  $("ou-sigma-out").textContent = `${f(c.sigma)} (${f(c.sigma / Math.sqrt(12))} /√mes)`;
+  $("ou-dias-out").textContent = `${c.dias} días (${(c.dias / 21).toFixed(0)} meses)`;
+  $("ou-n-out").textContent = String(c.n);
+  return c;
+}
+
+function simularYDibujarOU() {
+  const p = leerControlesOU();
+  const f = formatoNivelOU();
+  const x0 = mercadoOU ? mercadoOU.cal.x0 : EJEMPLO_OU.x0;
+  const params = { x0, kappa: p.kappa, theta: p.theta, sigma: p.sigma };
+  const Z = normalesComunes(semillaActual, p.n, p.dias);
+  const caminos = simularOU(params, Z);
+  const sinReversion = bandasDe(simularOU({ ...params, kappa: 0 }, Z));
+
+  const opciones = {
+    formato: f, minimoCero: false, nombreHistorico: "valor real",
+    referencia: { p5: sinReversion.p5, p95: sinReversion.p95, nombre: "sin reversión κ = 0 (90 %)", corto: "κ=0" },
+    lineaH: { valor: p.theta, nombre: "equilibrio θ" },
+  };
+  if (mercadoOU) {
+    const { precios, fechas } = mercadoOU.datos;
+    opciones.historico = precios.slice(-252);
+    opciones.fechasHistorico = fechas.slice(-252);
+  }
+  dibujarAbanico($("ou-canvas"), caminos, opciones);
+
+  // lectura: simulación frente a la ley teórica del taller
+  const T = p.dias / DIAS_HABILES;
+  const { m, v } = momentosOU(params, T);
+  const sd = Math.sqrt(v);
+  const finales = caminos.map((c) => c[c.length - 1]).sort((a, b) => a - b);
+  const pNegSim = finales.filter((x) => x < 0).length / finales.length;
+  const pNegTeo = normalAcumulada(-m / sd);
+  const origen = mercadoOU
+    ? `Partiendo del último dato de ${mercadoOU.datos.ticker} (${f(x0)})`
+    : `Partiendo de X(0) = ${f(x0)} (ejercicio 3 del taller)`;
+  let largoPlazo;
+  if (p.kappa < 1e-9) {
+    largoPlazo = "Con κ = 0 no hay reversión: X es un browniano sin deriva y la banda crece como √t, sin límite.";
+  } else {
+    const vidaMedia = (Math.LN2 / p.kappa) * DIAS_HABILES;
+    const anchoLargo = 1.645 * p.sigma / Math.sqrt(2 * p.kappa);
+    largoPlazo =
+      `Vida media: ln 2 / κ = ${vidaMedia.toFixed(1)} días hábiles. A largo plazo la banda se ` +
+      `estabiliza en θ ± 1.645·σ/√(2κ) = [${f(p.theta - anchoLargo)}, ${f(p.theta + anchoLargo)}]; ` +
+      `sin reversión (punteado) seguiría abriéndose.`;
+  }
+  $("ou-lectura").textContent =
+    `${origen}: a ${p.dias} días, el 90 % central de los ${p.n} escenarios termina entre ` +
+    `${f(percentil(finales, 0.05))} y ${f(percentil(finales, 0.95))}, con mediana ${f(percentil(finales, 0.5))}. ` +
+    `Ley del taller: X(T) ~ N(m, v) con m = ${f(m)} y √v = ${f(sd)}, es decir 90 % entre ` +
+    `${f(m - 1.645 * sd)} y ${f(m + 1.645 * sd)}. P(X(T) < 0): teórica ${fmtProb(pNegTeo)}, ` +
+    `simulada ${fmtProb(pNegSim)}. ${largoPlazo} ${textoSemilla()}`;
+}
+
+function mostrarCalibracionOU() {
+  const { datos, cal } = mercadoOU;
+  const f = formatoNivelOU();
+  $("ou-calibracion").innerHTML = `
+    ${encabezadoDatos(datos)}
+    <ul>
+      <li>regresión X(t+Δt) = a + b·X(t) + ε con ${cal.n} pares de días consecutivos:
+          â = ${cal.a.toPrecision(4)} · b̂ = ${cal.b.toFixed(4)} · s<sub>ε</sub> = ${cal.sEps.toPrecision(4)}</li>
+      ${cal.reversion ? `
+      <li>κ̂ = −ln(b̂)/Δt = ${cal.kappa.toFixed(2)} por año (${(cal.kappa / 12).toFixed(3)} por mes)
+          · vida media = ln 2/κ̂ = ${cal.vidaMediaDias.toFixed(1)} días hábiles</li>
+      <li>θ̂ = â/(1 − b̂) = ${f(cal.theta)} &nbsp;·&nbsp; σ̂ = s<sub>ε</sub>·√(2κ̂/(1 − b̂²)) = ${f(cal.sigma)}</li>`
+      : `<li>b̂ ≥ 1: no hay reversión que estimar; κ queda en 0 (browniano sin deriva)
+           y σ̂ = s<sub>ε</sub>/√Δt = ${f(cal.sigma)}</li>`}
+      <li>X(0) = último dato = ${f(cal.x0)} · rango de la serie: ${f(cal.minimo)} a ${f(cal.maximo)}</li>
+    </ul>`;
+  $("ou-calibracion").hidden = false;
+}
+
+function modoSustentacionOU() {
+  semillaActual = SEMILLA_BASE;
+  if (mercadoOU) fijarParametrosOU(mercadoOU.cal, mercadoOU.cal.minimo, mercadoOU.cal.maximo);
+  else fijarParametrosOU(EJEMPLO_OU);
+  $("ou-dias").value = 252;
+  $("ou-n").value = 200;
+  simularYDibujarOU();
+}
+
+MODULOS.ou = {
+  dibujar: simularYDibujarOU,
+  conectar() {
+    fijarParametrosOU(EJEMPLO_OU);
+    conectarFormularioDatos("ou", (datos) => {
+      const cal = calibrarOU(datos.precios);
+      mercadoOU = { datos, cal };
+      fijarParametrosOU(cal, cal.minimo, cal.maximo);
+      mostrarCalibracionOU();
+      simularYDibujarOU();
+    });
+    // atajos: las dos series del módulo (VIX y TRM)
+    document.querySelectorAll("#ou-form [data-ticker]").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("ou-ticker").value = b.dataset.ticker;
+        $("ou-form").requestSubmit();
+      });
+    });
+    $("ou-ejemplo").addEventListener("click", () => {
+      mercadoOU = null;
+      $("ou-calibracion").hidden = true;
+      $("ou-estado").className = "estado";
+      $("ou-estado").textContent = "Ejercicio 3 del taller: liquidez en millones de USD.";
+      modoSustentacionOU();
+    });
+    for (const id of ["ou-kappa", "ou-theta", "ou-sigma", "ou-dias", "ou-n"]) {
+      $(id).addEventListener("input", simularYDibujarOU);
+    }
+    $("ou-sin-reversion").addEventListener("click", () => {
+      $("ou-kappa").value = 0;
+      simularYDibujarOU();
+    });
+    $("ou-semilla").addEventListener("click", () => {
+      semillaActual = Math.floor(Math.random() * 100000);
+      simularYDibujarOU();
+    });
+    $("ou-reiniciar").addEventListener("click", modoSustentacionOU);
+  },
+};

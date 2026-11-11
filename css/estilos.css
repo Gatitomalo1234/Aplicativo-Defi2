@@ -270,3 +270,12 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   main { margin-left: 0; padding: 24px 16px 60px; }
   .simulador { grid-template-columns: 1fr; }
 }
+
+/* OU: atajos de series junto al formulario */
+.datos-mercado .atajos { display: flex; gap: 6px; }
+.datos-mercado .atajos button {
+  color: var(--acento);
+  background: none;
+  border: 1px solid var(--acento);
+}
+.datos-mercado .atajos button:hover { background: var(--acento-suave); }

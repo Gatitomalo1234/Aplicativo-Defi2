@@ -13,6 +13,7 @@ const ESTILO_GRAFICO = {
   texto: "#5C676D",
   referencia: "#B5552B", // banda de comparación (GBM) y días de salto
   marca: "#B5552B",
+  equilibrio: "#232A2E", // θ en OU (punteado fino)
   maxCaminosVisibles: 60,
 };
 
@@ -43,11 +44,15 @@ function bandasDe(caminos) {
 // opciones: { formato, historico: [precios], fechasHistorico: [fechas],
 //   referencia: { p5, p95, nombre }  -> banda de otro modelo en línea punteada
 //                                      (Merton: el GBM con las mismas Z),
-//   marcas: [índices de historico]   -> puntos sobre días especiales (saltos) }
+//   marcas: [índices de historico]   -> puntos sobre días especiales (saltos),
+//   lineaH: { valor, nombre }        -> línea horizontal (OU: el equilibrio θ),
+//   minimoCero: false                -> permite valores negativos en el eje (OU: niveles),
+//   nombreHistorico: "valor real"    -> rótulo de la serie histórica en la leyenda }
 function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   const o = {
     formato: (v) => v.toFixed(1), historico: [], fechasHistorico: [],
-    referencia: null, marcas: [], ...opciones,
+    referencia: null, marcas: [], lineaH: null, minimoCero: true,
+    nombreHistorico: "precio real", ...opciones,
   };
   const dpr = window.devicePixelRatio || 1;
   const ancho = canvas.clientWidth, alto = canvas.clientHeight;
@@ -81,9 +86,10 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
       if (o.referencia.p95[j] > yMax) yMax = o.referencia.p95[j];
     }
   }
+  if (o.lineaH) { yMin = Math.min(yMin, o.lineaH.valor); yMax = Math.max(yMax, o.lineaH.valor); }
   // los caminos de la muestra pueden salirse de la banda: se recortan al borde
   const holgura = (yMax - yMin) * 0.12 || 1;
-  yMin = Math.max(0, yMin - holgura);
+  yMin = o.minimoCero ? Math.max(0, yMin - holgura) : yMin - holgura;
   yMax += holgura;
 
   const px = (k) => margen.izq + (k / (total - 1)) * W;
@@ -172,6 +178,12 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
       ctx.beginPath(); ctx.arc(px(k), py(hist[k]), 3.5, 0, 2 * Math.PI); ctx.fill();
     }
   }
+  // línea horizontal (equilibrio θ en OU)
+  if (o.lineaH) {
+    ctx.strokeStyle = ESTILO_GRAFICO.equilibrio; ctx.lineWidth = 1.5; ctx.setLineDash([1, 3]);
+    ctx.beginPath(); ctx.moveTo(margen.izq, py(o.lineaH.valor)); ctx.lineTo(margen.izq + W, py(o.lineaH.valor)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
   ctx.restore();
 
   // línea de "hoy"
@@ -187,7 +199,7 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   let lx = margen.izq;
   if (hist.length) {
     ctx.fillStyle = ESTILO_GRAFICO.historico; ctx.fillRect(lx, 9, 14, 2);
-    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("precio real", lx + 18, 10);
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText(o.nombreHistorico, lx + 18, 10);
     lx += 100;
   }
   ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(lx, 9, 14, 2);
@@ -205,6 +217,12 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
       ctx.fillStyle = ESTILO_GRAFICO.marca;
       ctx.beginPath(); ctx.arc(lx + 7, 26, 3.5, 0, 2 * Math.PI); ctx.fill();
       ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("día de salto real", lx + 18, 26);
+    }
+    if (o.lineaH) {
+      lx += ctx.measureText(o.referencia.nombre || "referencia").width + 34;
+      ctx.strokeStyle = ESTILO_GRAFICO.equilibrio; ctx.lineWidth = 1.5; ctx.setLineDash([1, 3]);
+      ctx.beginPath(); ctx.moveTo(lx, 26); ctx.lineTo(lx + 14, 26); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText(o.lineaH.nombre, lx + 18, 26);
     }
   }
 
