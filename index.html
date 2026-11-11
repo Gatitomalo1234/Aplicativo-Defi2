@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Romper el mercado perfecto</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<nav id="navegacion" aria-label="Modelos">
+  <p class="marca">Romper el<br>mercado perfecto</p>
+  <a href="#inicio" data-seccion="inicio">Inicio<span>el mapa de supuestos</span></a>
+  <a href="#gbm" data-seccion="gbm">1 · Browniano geométrico<span>el punto de partida</span></a>
+  <a href="#merton" data-seccion="merton">2 · Saltos de Merton<span>rompe la continuidad</span></a>
+  <a href="#ou" data-seccion="ou">3 · Ornstein-Uhlenbeck<span>rompe el drift constante</span></a>
+  <a href="#fbm" data-seccion="fbm">4 · Browniano fraccional<span>rompe la independencia</span></a>
+  <a href="#manada" data-seccion="manada">5 · Manada<span>rompe a los agentes</span></a>
+  <a href="#opciones" data-seccion="opciones">6 · Opciones reales<span>de modelar a decidir</span></a>
+  <a href="#comparacion" data-seccion="comparacion">Comparación<span>contra datos reales</span></a>
+  <p class="pie">Cálculo Estocástico · Defi 2<br>Universidad Externado · 2026</p>
+</nav>
+
+<main>
+
+<section id="inicio">
+  <h1>Romper el mercado perfecto</h1>
+  <p class="bajada">Cinco modelos estocásticos para leer el mercado, un supuesto a la vez.</p>
+
+  <p>El movimiento browniano geométrico describe un mercado idealizado: retornos
+  independientes, volatilidad constante, trayectorias continuas, agentes que deciden
+  por su cuenta. Es el punto de partida de todo el curso — y casi ninguno de sus
+  supuestos sobrevive al contacto con los datos. Cada modelo de este aplicativo rompe
+  exactamente <em>uno</em> de esos supuestos y, al romperlo, gana la capacidad de
+  capturar un fenómeno real del mercado.</p>
+
+  <div class="mapa">
+    <a class="fila" href="#gbm">
+      <strong>Browniano geométrico</strong>
+      <span class="supuesto">el mercado idealizado, completo</span>
+      <span class="gana">el benchmark contra el que se mide todo lo demás</span>
+    </a>
+    <a class="fila" href="#merton">
+      <strong>Saltos de Merton</strong>
+      <span class="supuesto"><s>las trayectorias son continuas</s></span>
+      <span class="gana">el mercado también salta: noticias, earnings, crashes</span>
+    </a>
+    <a class="fila" href="#ou">
+      <strong>Ornstein-Uhlenbeck</strong>
+      <span class="supuesto"><s>la tendencia es constante</s></span>
+      <span class="gana">hay fuerzas que jalan al equilibrio: tasas, spreads</span>
+    </a>
+    <a class="fila" href="#fbm">
+      <strong>Browniano fraccional</strong>
+      <span class="supuesto"><s>los incrementos son independientes</s></span>
+      <span class="gana">el mercado tiene memoria: momentum y sobre-reacción</span>
+    </a>
+    <a class="fila" href="#manada">
+      <strong>Comportamiento en manada</strong>
+      <span class="supuesto"><s>los agentes deciden solos</s></span>
+      <span class="gana">la imitación crea burbujas y pánicos: GameStop, subprime</span>
+    </a>
+  </div>
+
+  <p class="nota">Convención del aplicativo: los cinco modelos se simulan con el mismo
+  esquema de Euler-Maruyama de las diapositivas del curso (dt = 1/252) y con <em>las mismas</em> normales
+  Z bajo semilla fija. Al mover un parámetro, el cambio que se ve en las trayectorias
+  es atribuible al parámetro, no al azar.</p>
+</section>
+
+<section id="gbm" hidden>
+  <h1>Browniano geométrico</h1>
+  <p class="bajada">El punto de partida: un mercado sin memoria, sin eventos y sin pánico.</p>
+
+  <h2>La ecuación, símbolo a símbolo</h2>
+  <p class="ecuacion">ΔS = μ · S · Δt &nbsp;+&nbsp; σ · S · √Δt · Z</p>
+  <ul class="parametros">
+    <li><b>μ</b> — la tendencia: lo que el activo rinde en promedio por año.</li>
+    <li><b>σ</b> — la volatilidad: cuánto se desvía el retorno diario de esa tendencia.</li>
+    <li><b>Z</b> — una normal estándar nueva cada día, independiente de las anteriores.
+        Aquí viven los tres supuestos que los demás modelos van a romper.</li>
+  </ul>
+
+  <h2>Datos de mercado</h2>
+  <form class="datos-mercado" id="gbm-form">
+    <label>Ticker de Yahoo Finance
+      <input type="text" id="gbm-ticker" value="NVDA" autocomplete="off" spellcheck="false">
+    </label>
+    <label>Desde <input type="date" id="gbm-desde"></label>
+    <label>Hasta <input type="date" id="gbm-hasta"></label>
+    <button type="submit" id="gbm-cargar">Cargar y calibrar</button>
+  </form>
+  <p class="estado" id="gbm-estado" role="status">Sin datos cargados: el simulador usa
+  parámetros de ejemplo y arranca en 100.</p>
+  <div class="calibracion" id="gbm-calibracion" hidden></div>
+
+  <h2>Simulador</h2>
+  <div class="simulador">
+    <div class="controles">
+      <label>μ tendencia anual <output id="gbm-mu-out">8 %</output>
+        <input type="range" id="gbm-mu" min="-0.60" max="1.20" step="0.01" value="0.08">
+      </label>
+      <label>σ volatilidad anual <output id="gbm-sigma-out">25 %</output>
+        <input type="range" id="gbm-sigma" min="0.05" max="1.50" step="0.01" value="0.25">
+      </label>
+      <label>horizonte <output id="gbm-dias-out">252 días</output>
+        <input type="range" id="gbm-dias" min="21" max="504" step="21" value="252">
+      </label>
+      <label>trayectorias <output id="gbm-n-out">200</output>
+        <input type="range" id="gbm-n" min="20" max="400" step="20" value="200">
+      </label>
+      <button id="gbm-semilla" type="button">Cambiar semilla</button>
+      <button id="gbm-reiniciar" type="button">Modo sustentación</button>
+      <p class="aclaracion">"Modo sustentación" restaura la semilla 2026 y los parámetros
+      calibrados (o los de ejemplo si no hay datos): lo que se ve en clase es
+      reproducible al punto.</p>
+    </div>
+    <div class="panel-grafico">
+      <canvas id="gbm-canvas"></canvas>
+      <p class="lectura" id="gbm-lectura"></p>
+    </div>
+  </div>
+
+  <h2>Qué explica y qué no</h2>
+  <ul class="honesto">
+    <li>Explica bien: la escala del riesgo (la banda crece como √t) y sirve de base
+        para Black-Scholes. <em>[completar con nuestras palabras]</em></li>
+    <li>No explica: colas gordas, clustering de volatilidad, crashes. Comparar contra
+        los retornos reales en la sección Comparación. <em>[completar]</em></li>
+  </ul>
+</section>
+
+<section id="merton" hidden>
+  <h1>Saltos de Merton</h1>
+  <p class="bajada">Rompe la continuidad: el mercado también se mueve a saltos.</p>
+  <div class="pendiente">
+    <p>Fase 2. El módulo tendrá el mismo patrón que el de GBM, más:</p>
+    <ul>
+      <li>Slider de λ que arranca en 0: con λ = 0 el modelo colapsa al GBM en vivo,
+          con las mismas Z.</li>
+      <li>Separación visual del riesgo difusivo (ruido diario) y el riesgo de evento.</li>
+      <li>Datos reales: días de earnings de NVIDIA (trabajo ya hecho en la presentación).</li>
+    </ul>
+  </div>
+</section>
+
+<section id="ou" hidden>
+  <h1>Ornstein-Uhlenbeck</h1>
+  <p class="bajada">Rompe el drift constante: hay fuerzas que jalan al equilibrio.</p>
+  <div class="pendiente">
+    <p>Fase 3. Claves del módulo:</p>
+    <ul>
+      <li>κ como velocidad de corrección: subir κ y ver cómo la banda deja de crecer
+          como √t y se estabiliza (comparación directa con el GBM, mismas Z).</li>
+      <li>θ como equilibrio de largo plazo. Candidata de serie real: TRM o una tasa.</li>
+      <li>Conexión con el ejercicio de liquidez del curso (dX = κ(θ−X)dt + σdB).</li>
+    </ul>
+  </div>
+</section>
+
+<section id="fbm" hidden>
+  <h1>Browniano fraccional</h1>
+  <p class="bajada">Rompe la independencia de incrementos: el mercado tiene memoria.</p>
+  <div class="pendiente">
+    <p>Fase 4. Claves del módulo:</p>
+    <ul>
+      <li>Slider de H con las mismas Z: 0.2 anti-persistente → 0.5 colapsa al GBM →
+          0.8 tendencial.</li>
+      <li>Cómo lo simulamos: correlacionamos las mismas normales con la matriz de
+          covarianzas del fGn (Cholesky) — ya implementado en modelos.js.</li>
+      <li>Exponente de Hurst estimado sobre una serie real.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="manada" hidden>
+  <h1>Comportamiento en manada</h1>
+  <p class="bajada">Rompe la independencia de los agentes: los participantes se imitan.</p>
+  <div class="pendiente">
+    <p>Fase 5. Claves del módulo:</p>
+    <ul>
+      <li>Modelo de Kirman (1993): N agentes optimistas/pesimistas; ε cambio propio,
+          δ imitación. Con δ alto aparecen burbujas y caídas endógenas, sin noticias.
+          (Pendiente decidir: Kirman vs modelo de umbral.)</li>
+      <li>GameStop 2021: ningún modelo anterior genera esa forma; el de imitación sí.</li>
+      <li>Subprime 2007-09: la misma lógica contada como imitación institucional.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="opciones" hidden>
+  <h1>Opciones reales</h1>
+  <p class="bajada">De modelar a decidir: cuánto vale la flexibilidad en un proyecto.</p>
+  <div class="pendiente">
+    <p>Fase 6. Este módulo no rompe un supuesto: usa los modelos anteriores para tomar
+    una decisión de inversión. Propuesta (por confirmar con lo visto en clase):</p>
+    <ul>
+      <li>Árbol binomial CRR del curso aplicado al valor de un proyecto
+          (U = e^(σ√Δt), D = 1/U, p = ((1+r) − D) / (U − D)).</li>
+      <li>σ del proyecto tomada de una empresa comparable en Yahoo Finance,
+          calibrada igual que en el GBM.</li>
+      <li>Opciones de expandir, abandonar y esperar.</li>
+      <li>VPN tradicional frente a VPN expandido = VPN + valor de la flexibilidad.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="comparacion" hidden>
+  <h1>Comparación contra datos reales</h1>
+  <p class="bajada">Ningún modelo gana siempre; cada uno captura algo distinto.</p>
+  <div class="pendiente">
+    <p>Fase 7: una serie real elegible, los cinco modelos calibrados sobre ella, y las
+    métricas que ya dominamos del taller (RMSE rolling, QQ-plot de colas). La
+    conclusión se escribe con nuestras palabras, sin declarar un ganador que los
+    datos no sostengan.</p>
+  </div>
+</section>
+
+</main>
+
+<script src="js/ruido.js"></script>
+<script src="js/modelos.js"></script>
+<script src="js/datos.js"></script>
+<script src="js/grafico.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

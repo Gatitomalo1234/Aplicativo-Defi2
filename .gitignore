@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+# la caché se regenera con: python datos/descarga_datos.py
+datos/cache/
+.venv/
