@@ -42,7 +42,13 @@ async function cargarHistorico(ticker, desde, hasta) {
 }
 
 // Log-retornos diarios: r_t = ln(S_t / S_{t-1})
+// El servidor ya descarta precios no positivos; esta revisión es la última
+// barrera para no calibrar en silencio con un NaN (p. ej. una copia vieja de la caché).
 function logRetornos(precios) {
+  const malo = precios.findIndex((p) => !(p > 0) || !Number.isFinite(p));
+  if (malo !== -1) {
+    throw new Error(`El precio número ${malo + 1} no es un número positivo (${precios[malo]}); no se puede calibrar.`);
+  }
   const r = [];
   for (let i = 1; i < precios.length; i++) r.push(Math.log(precios[i] / precios[i - 1]));
   return r;
@@ -61,4 +67,50 @@ function calibrarGBM(precios) {
   const sigma = s * Math.sqrt(DIAS_HABILES);
   const mu = DIAS_HABILES * media + (sigma * sigma) / 2;
   return { mu, sigma, s0: precios[precios.length - 1], nRetornos: n, media, s };
+}
+
+// Calibración de Merton por umbral (método simple, sustentable paso a paso):
+//   1. Un día es "de salto" si su log-retorno se aleja de la media más de c
+//      desviaciones: |r − x̄| > c·s. (c lo elige el usuario: es un slider.)
+//   2. λ̂  = número de saltos / años de datos           (saltos por año)
+//      μ̂J = media de los retornos de salto,  σ̂J = su desviación muestral
+//      (aproximación: el retorno de un día de salto incluye también el ruido
+//      difusivo de ese día; lo despreciamos porque es pequeño frente al salto)
+//   3. σ̂  = desviación de los días SIN salto · √252     (solo riesgo difusivo)
+//   4. μ̂ se despeja de la media de los log-retornos. En el modelo compensado
+//      ln S crece en promedio (μ − λk − σ²/2 + λ·μJ) por año, con k = e^(μJ+σJ²/2) − 1:
+//      μ̂ = 252·x̄ + σ̂²/2 + λ̂·(k̂ − μ̂J)
+function calibrarMerton(precios, fechas, c = 3) {
+  const r = logRetornos(precios);
+  const n = r.length;
+  const media = r.reduce((a, b) => a + b, 0) / n;
+  const s = Math.sqrt(r.reduce((a, b) => a + (b - media) ** 2, 0) / (n - 1));
+  const corte = c * s;
+
+  const saltos = [], normales = [];
+  r.forEach((x, i) => {
+    if (Math.abs(x - media) > corte) saltos.push({ i: i + 1, fecha: fechas[i + 1], r: x });
+    else normales.push(x);
+  });
+
+  const anios = n / DIAS_HABILES;
+  const lambda = saltos.length / anios;
+  const ys = saltos.map((o) => o.r);
+  const muJ = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0;
+  const sigmaJ = ys.length > 1
+    ? Math.sqrt(ys.reduce((a, b) => a + (b - muJ) ** 2, 0) / (ys.length - 1))
+    : 0;
+
+  const mN = normales.reduce((a, b) => a + b, 0) / normales.length;
+  const sN = Math.sqrt(normales.reduce((a, b) => a + (b - mN) ** 2, 0) / (normales.length - 1));
+  const sigma = sN * Math.sqrt(DIAS_HABILES);
+  const k = Math.exp(muJ + (sigmaJ * sigmaJ) / 2) - 1;
+  const mu = DIAS_HABILES * media + (sigma * sigma) / 2 + lambda * (k - muJ);
+
+  return {
+    mu, sigma, lambda, muJ, sigmaJ, k, c, corte,
+    s0: precios[precios.length - 1],
+    nRetornos: n, media, s, anios, saltos, retornos: r,
+    sigmaTotal: s * Math.sqrt(DIAS_HABILES), // la σ que vería el GBM, para comparar
+  };
 }

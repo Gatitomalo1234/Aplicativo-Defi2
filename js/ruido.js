@@ -3,7 +3,9 @@
 // Así, al mover un parámetro, el cambio en las trayectorias se debe al parámetro
 // y no a un azar distinto. Esa es la convención central del aplicativo.
 
-// Generador congruencial Mulberry32: rápido, con semilla, suficiente para simulación.
+// Generador Mulberry32: el estado avanza sumando una constante (secuencia de Weyl)
+// y luego se mezclan sus bits. Rápido, con semilla, suficiente para simulación
+// (no para criptografía). Devuelve uniformes en [0, 1).
 function crearGenerador(semilla) {
   let a = semilla >>> 0;
   return function () {

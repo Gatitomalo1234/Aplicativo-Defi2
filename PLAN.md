@@ -33,8 +33,9 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 
 ## Convenciones (lo que nos hace defendibles)
 
-1. **Un solo esquema numérico**: Euler-Maruyama, el de las diapositivas del curso,
-   dt = 1/252. (Pendiente: el taller usa transición exacta para el GBM; ver CLAUDE.md.)
+1. **Esquema numérico**: modelos de precio con la transición exacta del taller,
+   S(t+dt) = S(t)·exp[(μ − σ²/2)dt + σ√dt·Z] (precios siempre positivos); OU con
+   Euler-Maruyama, el de las diapositivas. dt = 1/252.
 2. **Mismo ruido**: semilla fija → las mismas normales Z en todas las simulaciones.
    Al mover un slider, el cambio es atribuible al parámetro, no al azar.
 3. **Calibración con datos reales** en cada módulo, mostrando el cálculo paso a paso
@@ -53,7 +54,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/modelos.js` — los 5 simuladores con la interfaz `simular(params, Z)`
 - `js/datos.js` — pide precios al servidor y calibra
 - `js/grafico.js` — histórico real + abanico simulado (banda 5–95 %, mediana, hover)
-- `js/app.js` — navegación y controles
+- `js/app.js` — navegación, piezas comunes (formulario de datos, lectura) y módulo GBM
+- `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
 - `datos/cache/` — se crea solo al descargar
 
@@ -61,9 +63,14 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 
 - **F1 — hecho**: esqueleto + módulo GBM con simulador
 - **F1b — hecho**: conexión a Yahoo Finance. El GBM carga cualquier ticker, calibra μ y σ,
-  y simula desde el último cierre real. Probado con datos simulados; falta la primera
-  prueba con Yahoo real en el computador de Nicolás.
-- **F2**: Merton (slider λ desde 0 → colapsa al GBM en vivo; calibración con saltos reales)
+  y simula desde el último cierre real. Probado con Yahoo real el 11 nov.
+- **F1c — hecho (11 nov)**: revisión de datos (limpieza + resumen de calidad), esquema
+  exacto para precios, Merton con ruido fijo, git.
+- **F2 — hecho (11 nov), en revisión del equipo**: Merton en la interfaz. λ arranca en 0
+  (= GBM); banda del GBM con las mismas Z en punteado (riesgo de evento); calibración
+  por umbral |r − x̄| > c·s con slider de c; histograma de retornos reales y tabla de
+  días de salto con columna `[completar]` para la noticia de cada día.
+  Limitación documentada: el umbral subestima λ (prueba simulada: λ=4 → λ̂≈2.8).
 - **F3**: OU (subir κ → la banda deja de crecer como √t; calibración sobre TRM o una tasa)
 - **F4**: fBm (slider H con las mismas Z; Hurst estimado sobre la serie cargada)
 - **F5**: Manada (Kirman: ε cambio propio, δ imitación; GameStop 2021 y S&P 2007-09)

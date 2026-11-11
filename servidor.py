@@ -34,17 +34,55 @@ class SinDatos(Exception):
     """Yahoo respondió, pero no tiene precios para ese ticker y rango."""
 
 
+def limpiar_serie(fechas, precios):
+    """Reglas de datos del taller: ordenar por fecha, quitar fechas repetidas y
+    descartar precios faltantes o no positivos. No se inventa nada: un dato malo
+    se descarta (no se rellena ni se convierte en retorno cero) y se reporta."""
+    descartes = {"duplicados": 0, "faltantes": 0, "no_positivos": 0}
+    por_fecha = {}
+    for f, p in sorted(zip(fechas, precios), key=lambda par: par[0]):
+        if f in por_fecha:
+            descartes["duplicados"] += 1  # se conserva la primera aparición
+            continue
+        por_fecha[f] = p
+    limpias, limpios = [], []
+    for f, p in por_fecha.items():
+        if p is None or p != p:  # p != p detecta NaN
+            descartes["faltantes"] += 1
+        elif p <= 0:
+            descartes["no_positivos"] += 1
+        else:
+            limpias.append(f)
+            limpios.append(p)
+    return limpias, limpios, descartes
+
+
 def obtener_de_yahoo(ticker, desde, hasta):
-    """Precios de cierre ajustados (dividendos y splits) entre dos fechas."""
+    """Precios de cierre ajustados (dividendos y splits) entre dos fechas.
+    Ojo: en yfinance la fecha `hasta` es exclusiva."""
+    from datetime import datetime
+
+    import pandas as pd
     import yfinance as yf
 
     df = yf.Ticker(ticker).history(start=desde, end=hasta, auto_adjust=True)
     if df.empty:
         raise SinDatos(ticker)
-    cierre = df["Close"].dropna()
+    fechas = [d.strftime("%Y-%m-%d") for d in df.index]
+    precios = [float(p) for p in df["Close"].values]
+    fechas, precios, descartes = limpiar_serie(fechas, precios)
+    if not precios:
+        raise SinDatos(ticker)
     return {
-        "fechas": [d.strftime("%Y-%m-%d") for d in cierre.index],
-        "precios": [round(float(p), 4) for p in cierre.values],
+        "fechas": fechas,
+        "precios": [round(p, 4) for p in precios],
+        "calidad": {
+            "n_recibidos": len(df),
+            "n_validos": len(precios),
+            "descartes": descartes,
+            "consultado": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "versiones": {"yfinance": yf.__version__, "pandas": pd.__version__},
+        },
     }
 
 
@@ -93,6 +131,10 @@ def historico(ticker, desde, hasta):
     return 200, datos
 
 
+PUBLICOS = ("/", "/index.html", "/favicon.ico")
+CARPETAS_PUBLICAS = ("/css/", "/js/", "/contexto/")
+
+
 class Manejador(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=RAIZ, **kwargs)
@@ -101,7 +143,19 @@ class Manejador(SimpleHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/api/historico":
             return self._api_historico(parse_qs(url.query))
-        return super().do_GET()
+        # solo se sirve lo que usa el aplicativo (no el código Python, la caché, etc.)
+        if url.path in PUBLICOS or (
+            url.path.startswith(CARPETAS_PUBLICAS) and ".." not in url.path
+        ):
+            return super().do_GET()
+        return self.send_error(404)
+
+    def end_headers(self):
+        # que el navegador revalide siempre: si no, tras editar el CSS o el JS
+        # puede seguir usando la versión vieja guardada en su caché
+        if not self.path.startswith("/api/"):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
 
     def _api_historico(self, q):
         ticker = q.get("ticker", [""])[0].strip()

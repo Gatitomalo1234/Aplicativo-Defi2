@@ -11,10 +11,14 @@ const ESTILO_GRAFICO = {
   eje: "#8A949A",
   rejilla: "#E3E6E1",
   texto: "#5C676D",
+  referencia: "#B5552B", // banda de comparación (GBM) y días de salto
+  marca: "#B5552B",
   maxCaminosVisibles: 60,
 };
 
-function _percentil(ordenado, p) {
+// percentil con interpolación lineal; lo usan la banda del gráfico y el texto
+// de lectura, para que ambos muestren exactamente los mismos números
+function percentil(ordenado, p) {
   const i = (ordenado.length - 1) * p;
   const lo = Math.floor(i);
   const hi = Math.min(lo + 1, ordenado.length - 1);
@@ -29,16 +33,22 @@ function bandasDe(caminos) {
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < caminos.length; i++) col[i] = caminos[i][j];
     const ord = Float64Array.from(col).sort();
-    p5[j] = _percentil(ord, 0.05);
-    p50[j] = _percentil(ord, 0.5);
-    p95[j] = _percentil(ord, 0.95);
+    p5[j] = percentil(ord, 0.05);
+    p50[j] = percentil(ord, 0.5);
+    p95[j] = percentil(ord, 0.95);
   }
   return { p5, p50, p95 };
 }
 
-// opciones: { formato, historico: [precios], fechasHistorico: [fechas] }
+// opciones: { formato, historico: [precios], fechasHistorico: [fechas],
+//   referencia: { p5, p95, nombre }  -> banda de otro modelo en línea punteada
+//                                      (Merton: el GBM con las mismas Z),
+//   marcas: [índices de historico]   -> puntos sobre días especiales (saltos) }
 function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
-  const o = { formato: (v) => v.toFixed(1), historico: [], fechasHistorico: [], ...opciones };
+  const o = {
+    formato: (v) => v.toFixed(1), historico: [], fechasHistorico: [],
+    referencia: null, marcas: [], ...opciones,
+  };
   const dpr = window.devicePixelRatio || 1;
   const ancho = canvas.clientWidth, alto = canvas.clientHeight;
   canvas.width = ancho * dpr;
@@ -56,7 +66,8 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   canvas._caminosCache = caminos;
   canvas._bandasCache = bandas;
 
-  const margen = { izq: 58, der: 14, arr: 26, aba: 26 };
+  // con banda de referencia la leyenda usa dos líneas: se deja más margen arriba
+  const margen = { izq: 58, der: 14, arr: o.referencia ? 42 : 26, aba: 26 };
   const W = ancho - margen.izq - margen.der;
   const H = alto - margen.arr - margen.aba;
 
@@ -65,6 +76,10 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   for (let j = 0; j < nSim; j++) {
     if (bandas.p5[j] < yMin) yMin = bandas.p5[j];
     if (bandas.p95[j] > yMax) yMax = bandas.p95[j];
+    if (o.referencia) {
+      if (o.referencia.p5[j] < yMin) yMin = o.referencia.p5[j];
+      if (o.referencia.p95[j] > yMax) yMax = o.referencia.p95[j];
+    }
   }
   // los caminos de la muestra pueden salirse de la banda: se recortan al borde
   const holgura = (yMax - yMin) * 0.12 || 1;
@@ -128,6 +143,20 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   for (let j = 1; j < nSim; j++) ctx.lineTo(px(desfase + j), py(bandas.p50[j]));
   ctx.stroke();
 
+  // banda de referencia (otro modelo, mismas Z): solo sus bordes, punteados
+  if (o.referencia) {
+    ctx.strokeStyle = ESTILO_GRAFICO.referencia;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    for (const borde of [o.referencia.p5, o.referencia.p95]) {
+      ctx.beginPath();
+      ctx.moveTo(px(desfase), py(borde[0]));
+      for (let j = 1; j < nSim; j++) ctx.lineTo(px(desfase + j), py(borde[j]));
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
   // histórico real
   if (hist.length) {
     ctx.strokeStyle = ESTILO_GRAFICO.historico;
@@ -136,6 +165,12 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
     ctx.moveTo(px(0), py(hist[0]));
     for (let k = 1; k < hist.length; k++) ctx.lineTo(px(k), py(hist[k]));
     ctx.stroke();
+    // marcas sobre días especiales del histórico (p. ej. saltos detectados)
+    ctx.fillStyle = ESTILO_GRAFICO.marca;
+    for (const k of o.marcas) {
+      if (k < 0 || k >= hist.length) continue;
+      ctx.beginPath(); ctx.arc(px(k), py(hist[k]), 3.5, 0, 2 * Math.PI); ctx.fill();
+    }
   }
   ctx.restore();
 
@@ -160,6 +195,18 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   lx += 128;
   ctx.fillStyle = ESTILO_GRAFICO.banda; ctx.fillRect(lx, 4, 14, 12);
   ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("90 % de los escenarios", lx + 18, 10);
+  if (o.referencia) { // segunda línea de la leyenda
+    lx = margen.izq;
+    ctx.strokeStyle = ESTILO_GRAFICO.referencia; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(lx, 26); ctx.lineTo(lx + 14, 26); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText(o.referencia.nombre || "referencia", lx + 18, 26);
+    if (o.marcas.length) {
+      lx += ctx.measureText(o.referencia.nombre || "referencia").width + 34;
+      ctx.fillStyle = ESTILO_GRAFICO.marca;
+      ctx.beginPath(); ctx.arc(lx + 7, 26, 3.5, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("día de salto real", lx + 18, 26);
+    }
+  }
 
   // hover
   if (hoverIndice !== null && hoverIndice >= 0 && hoverIndice < total) {
@@ -172,10 +219,14 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
       texto = `${fecha}precio real ${o.formato(hist[k])}`;
     } else {
       const j = k - desfase;
-      texto = `día +${j} · p5 ${o.formato(bandas.p5[j])} · mediana ${o.formato(bandas.p50[j])} · p95 ${o.formato(bandas.p95[j])}`;
+      texto = `+${j} d · p5 ${o.formato(bandas.p5[j])} · mediana ${o.formato(bandas.p50[j])} · p95 ${o.formato(bandas.p95[j])}`;
+      if (o.referencia) {
+        texto += ` · ${o.referencia.corto || "ref."} ${o.formato(o.referencia.p5[j])}–${o.formato(o.referencia.p95[j])}`;
+      }
     }
     const anchoTexto = ctx.measureText(texto).width + 12;
-    const tx = Math.min(Math.max(px(k) - anchoTexto / 2, margen.izq), margen.izq + W - anchoTexto);
+    // el recuadro puede usar todo el ancho del canvas (también el margen del eje y)
+    const tx = Math.max(4, Math.min(px(k) - anchoTexto / 2, ancho - 4 - anchoTexto));
     ctx.fillStyle = "#FFFFFF";
     ctx.strokeStyle = ESTILO_GRAFICO.rejilla;
     ctx.fillRect(tx, margen.arr + 2, anchoTexto, 20);
@@ -198,4 +249,70 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
       dibujarAbanico(canvas, e.caminos, e.opciones);
     });
   }
+}
+
+// Histograma de retornos diarios (en %), sin librerías.
+// opciones: { umbralInf, umbralSup } -> líneas verticales del umbral de salto;
+//   las barras fuera del umbral se pintan con el color de "salto".
+// La escala vertical es raíz cuadrada del conteo: así las colas (pocos días)
+// se alcanzan a ver junto al centro (cientos de días). Se dice en el eje.
+function dibujarHistograma(canvas, retornos, opciones = {}) {
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = canvas.clientWidth, alto = canvas.clientHeight;
+  canvas.width = ancho * dpr;
+  canvas.height = alto * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  ctx.font = "11px -apple-system, 'Segoe UI', sans-serif";
+
+  const margen = { izq: 14, der: 14, arr: 24, aba: 26 };
+  const W = ancho - margen.izq - margen.der;
+  const H = alto - margen.arr - margen.aba;
+  let lim = 0;
+  for (const r of retornos) lim = Math.max(lim, Math.abs(r));
+  lim = Math.max(lim, Math.abs(opciones.umbralInf || 0), Math.abs(opciones.umbralSup || 0)) * 1.05;
+  const nBarras = 61;
+  const ancho1 = (2 * lim) / nBarras;
+  const conteo = new Array(nBarras).fill(0);
+  for (const r of retornos) {
+    conteo[Math.min(nBarras - 1, Math.floor((r + lim) / ancho1))]++;
+  }
+  const maxRaiz = Math.sqrt(Math.max(...conteo)) || 1;
+  const px = (r) => margen.izq + ((r + lim) / (2 * lim)) * W;
+
+  for (let b = 0; b < nBarras; b++) {
+    if (!conteo[b]) continue;
+    const centro = -lim + (b + 0.5) * ancho1;
+    const fuera = centro < opciones.umbralInf || centro > opciones.umbralSup;
+    ctx.fillStyle = fuera ? ESTILO_GRAFICO.marca : ESTILO_GRAFICO.mediana;
+    const h = (Math.sqrt(conteo[b]) / maxRaiz) * H;
+    ctx.fillRect(px(-lim + b * ancho1) + 0.5, margen.arr + H - h, W / nBarras - 1, h);
+  }
+
+  // eje x en %
+  ctx.strokeStyle = ESTILO_GRAFICO.eje; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(margen.izq, margen.arr + H); ctx.lineTo(margen.izq + W, margen.arr + H); ctx.stroke();
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.textBaseline = "top";
+  for (const v of [-lim * 0.9, -lim * 0.45, 0, lim * 0.45, lim * 0.9]) {
+    ctx.textAlign = "center";
+    ctx.fillText(`${(v * 100).toFixed(0)} %`, px(v), margen.arr + H + 6);
+  }
+
+  // umbrales
+  ctx.strokeStyle = ESTILO_GRAFICO.marca; ctx.setLineDash([4, 3]);
+  for (const u of [opciones.umbralInf, opciones.umbralSup]) {
+    if (u === undefined) continue;
+    ctx.beginPath(); ctx.moveTo(px(u), margen.arr); ctx.lineTo(px(u), margen.arr + H); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // leyenda
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(margen.izq, 6, 12, 10);
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días normales", margen.izq + 16, 11);
+  ctx.fillStyle = ESTILO_GRAFICO.marca; ctx.fillRect(margen.izq + 110, 6, 12, 10);
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días de salto (fuera del umbral)", margen.izq + 126, 11);
+  ctx.textAlign = "right";
+  ctx.fillText("altura: √(número de días)", margen.izq + W, 11);
 }

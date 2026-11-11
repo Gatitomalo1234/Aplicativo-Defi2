@@ -182,7 +182,7 @@ p { max-width: 66ch; }
   border-radius: 6px;
   background: var(--superficie);
 }
-#gbm-ticker { width: 110px; text-transform: uppercase; }
+.datos-mercado .ticker { width: 110px; text-transform: uppercase; }
 .datos-mercado button {
   font: 600 0.85rem var(--sans);
   color: #fff;
@@ -206,6 +206,33 @@ p { max-width: 66ch; }
   font-variant-numeric: tabular-nums;
 }
 .calibracion ul { padding-left: 18px; }
+
+/* Merton: umbral de saltos, histograma y tabla de saltos */
+.umbral {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 14px 0;
+  max-width: 520px;
+}
+.umbral output { float: right; font-weight: 400; color: var(--acento); }
+.umbral input[type="range"] { width: 100%; accent-color: var(--acento); }
+.histograma { margin-top: 16px; }
+h3 { font-size: 1rem; margin: 22px 0 8px; }
+.histograma canvas { width: 100%; height: 200px; display: block; }
+.histograma table {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.histograma th, .histograma td {
+  text-align: left;
+  padding: 5px 14px 5px 0;
+  border-bottom: 1px solid var(--linea);
+}
+.histograma td.negativo { color: #a1302b; }
+.histograma td em { color: var(--acento); }
 
 /* qué explica / qué no */
 .honesto { padding-left: 20px; }

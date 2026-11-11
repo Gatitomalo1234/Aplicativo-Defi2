@@ -1,1 +1,3 @@
-yfinance>=0.2.40
+# Versiones con las que se probó el aplicativo (nov 2026)
+yfinance==1.7.0
+pandas==3.0.2

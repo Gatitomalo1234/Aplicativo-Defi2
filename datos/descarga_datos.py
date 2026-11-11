@@ -22,6 +22,7 @@ SERIES = [
 for ticker, desde, hasta in SERIES:
     codigo, cuerpo = historico(ticker, desde, hasta)
     if codigo == 200:
-        print(f"{ticker}: {len(cuerpo['precios'])} precios ({cuerpo['fuente']})")
+        d = cuerpo.get("calidad", {}).get("descartes", {})
+        print(f"{ticker}: {len(cuerpo['precios'])} precios ({cuerpo['fuente']}), descartes {d}")
     else:
         print(f"{ticker}: ERROR — {cuerpo['error']}")

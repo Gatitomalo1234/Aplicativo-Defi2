@@ -62,8 +62,10 @@
     </a>
   </div>
 
-  <p class="nota">Convención del aplicativo: los cinco modelos se simulan con el mismo
-  esquema de Euler-Maruyama de las diapositivas del curso (dt = 1/252) y con <em>las mismas</em> normales
+  <p class="nota">Convención del aplicativo: los modelos de precio se simulan con la
+  transición exacta del taller de valoración, S(t+Δt) = S(t)·exp[(μ − σ²/2)Δt + σ√Δt·Z],
+  que garantiza precios positivos; Ornstein-Uhlenbeck, que modela un nivel, usa el
+  esquema de Euler-Maruyama de las diapositivas. Todos con dt = 1/252 y con <em>las mismas</em> normales
   Z bajo semilla fija. Al mover un parámetro, el cambio que se ve en las trayectorias
   es atribuible al parámetro, no al azar.</p>
 </section>
@@ -73,7 +75,9 @@
   <p class="bajada">El punto de partida: un mercado sin memoria, sin eventos y sin pánico.</p>
 
   <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">ΔS = μ · S · Δt &nbsp;+&nbsp; σ · S · √Δt · Z</p>
+  <p class="ecuacion">dS = μ · S · dt &nbsp;+&nbsp; σ · S · dW</p>
+  <p>Para simular se usa la solución exacta (lema de Itô sobre ln S), paso a paso:</p>
+  <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z]</p>
   <ul class="parametros">
     <li><b>μ</b> — la tendencia: lo que el activo rinde en promedio por año.</li>
     <li><b>σ</b> — la volatilidad: cuánto se desvía el retorno diario de esa tendencia.</li>
@@ -84,7 +88,7 @@
   <h2>Datos de mercado</h2>
   <form class="datos-mercado" id="gbm-form">
     <label>Ticker de Yahoo Finance
-      <input type="text" id="gbm-ticker" value="NVDA" autocomplete="off" spellcheck="false">
+      <input type="text" id="gbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
     </label>
     <label>Desde <input type="date" id="gbm-desde"></label>
     <label>Hasta <input type="date" id="gbm-hasta"></label>
@@ -97,11 +101,11 @@
   <h2>Simulador</h2>
   <div class="simulador">
     <div class="controles">
-      <label>μ tendencia anual <output id="gbm-mu-out">8 %</output>
-        <input type="range" id="gbm-mu" min="-0.60" max="1.20" step="0.01" value="0.08">
+      <label>μ tendencia anual <output id="gbm-mu-out">8.0 %</output>
+        <input type="range" id="gbm-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
       </label>
-      <label>σ volatilidad anual <output id="gbm-sigma-out">25 %</output>
-        <input type="range" id="gbm-sigma" min="0.05" max="1.50" step="0.01" value="0.25">
+      <label>σ volatilidad anual <output id="gbm-sigma-out">25.0 %</output>
+        <input type="range" id="gbm-sigma" min="0.05" max="1.50" step="0.001" value="0.25">
       </label>
       <label>horizonte <output id="gbm-dias-out">252 días</output>
         <input type="range" id="gbm-dias" min="21" max="504" step="21" value="252">
@@ -133,15 +137,96 @@
 <section id="merton" hidden>
   <h1>Saltos de Merton</h1>
   <p class="bajada">Rompe la continuidad: el mercado también se mueve a saltos.</p>
-  <div class="pendiente">
-    <p>Fase 2. El módulo tendrá el mismo patrón que el de GBM, más:</p>
-    <ul>
-      <li>Slider de λ que arranca en 0: con λ = 0 el modelo colapsa al GBM en vivo,
-          con las mismas Z.</li>
-      <li>Separación visual del riesgo difusivo (ruido diario) y el riesgo de evento.</li>
-      <li>Datos reales: días de earnings de NVIDIA (trabajo ya hecho en la presentación).</li>
-    </ul>
+
+  <h2>La ecuación, símbolo a símbolo</h2>
+  <p class="ecuacion">dS / S = (μ − λk) · dt &nbsp;+&nbsp; σ · dW &nbsp;+&nbsp; dJ</p>
+  <p>Para simular, cada día, con las mismas Z del GBM:</p>
+  <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − λk − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z &nbsp;+&nbsp; Y]</p>
+  <ul class="parametros">
+    <li><b>λ</b> — intensidad: cuántos saltos hay en promedio por año. Cada día hay un
+        salto con probabilidad λ·Δt. Con λ = 0 el modelo es el GBM.</li>
+    <li><b>Y</b> — el tamaño del salto, en logaritmo: Y ~ N(μ<sub>J</sub>, σ<sub>J</sub>²) los días
+        con salto, Y = 0 los demás.</li>
+    <li><b>μ<sub>J</sub>, σ<sub>J</sub></b> — tamaño promedio del salto y qué tan variable es.</li>
+    <li><b>σ</b> — ahora solo mide el ruido de los días normales (riesgo difusivo).</li>
+    <li><b>k = e<sup>μJ + σJ²/2</sup> − 1</b> — el salto promedio en precio. Restar λk
+        compensa los saltos: μ sigue siendo el retorno esperado total.</li>
+  </ul>
+
+  <h2>Datos de mercado</h2>
+  <form class="datos-mercado" id="merton-form">
+    <label>Ticker de Yahoo Finance
+      <input type="text" id="merton-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
+    </label>
+    <label>Desde <input type="date" id="merton-desde"></label>
+    <label>Hasta <input type="date" id="merton-hasta"></label>
+    <button type="submit" id="merton-cargar">Cargar y calibrar</button>
+  </form>
+  <p class="estado" id="merton-estado" role="status">Sin datos cargados: el simulador usa
+  parámetros de ejemplo, arranca en 100 y con λ = 0 (sin saltos).</p>
+
+  <div class="umbral" id="merton-umbral-caja" hidden>
+    <label>Umbral para contar un día como salto: |r − x̄| &gt; c · s, con c =
+      <output id="merton-umbral-out">3.0 s</output>
+      <input type="range" id="merton-umbral" min="2" max="6" step="0.1" value="3">
+    </label>
+    <p class="aclaracion">Umbral bajo: más días cuentan como salto (λ̂ sube, σ̂ difusiva
+    baja). Umbral alto: solo los movimientos extremos. Limitación del método: los saltos
+    más pequeños que el umbral no se detectan, así que λ̂ tiende a quedar corto y μ̂<sub>J</sub>
+    a exagerar el tamaño. Prueba con 30 series simuladas de 40 años (λ = 4, μ<sub>J</sub> = −8 %,
+    c = 3): λ̂ ≈ 2.8 y μ̂<sub>J</sub> ≈ −10 %, mientras que σ̂ y μ̂ salieron sin sesgo.</p>
   </div>
+  <div class="calibracion" id="merton-calibracion" hidden></div>
+  <div class="histograma" id="merton-hist-caja" hidden>
+    <h3>Retornos diarios reales</h3>
+    <canvas id="merton-hist"></canvas>
+    <h3>Días detectados como salto</h3>
+    <div id="merton-saltos"></div>
+  </div>
+
+  <h2>Simulador</h2>
+  <div class="simulador">
+    <div class="controles">
+      <label>μ tendencia anual <output id="merton-mu-out">8.0 %</output>
+        <input type="range" id="merton-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
+      </label>
+      <label>σ volatilidad difusiva <output id="merton-sigma-out">20.0 %</output>
+        <input type="range" id="merton-sigma" min="0.05" max="1.50" step="0.001" value="0.20">
+      </label>
+      <label>λ saltos por año <output id="merton-lambda-out">0.0 al año</output>
+        <input type="range" id="merton-lambda" min="0" max="30" step="0.1" value="0">
+      </label>
+      <label>μ<sub>J</sub> salto promedio <output id="merton-muJ-out">-5.0 %</output>
+        <input type="range" id="merton-muJ" min="-0.40" max="0.40" step="0.005" value="-0.05">
+      </label>
+      <label>σ<sub>J</sub> dispersión del salto <output id="merton-sigmaJ-out">8.0 %</output>
+        <input type="range" id="merton-sigmaJ" min="0" max="0.40" step="0.005" value="0.08">
+      </label>
+      <label>horizonte <output id="merton-dias-out">252 días</output>
+        <input type="range" id="merton-dias" min="21" max="504" step="21" value="252">
+      </label>
+      <label>trayectorias <output id="merton-n-out">200</output>
+        <input type="range" id="merton-n" min="20" max="400" step="20" value="200">
+      </label>
+      <button id="merton-sin-saltos" type="button">λ = 0 (GBM)</button>
+      <button id="merton-semilla" type="button">Cambiar semilla</button>
+      <button id="merton-reiniciar" type="button">Modo sustentación</button>
+      <p class="aclaracion">Los saltos tienen su propio azar, fijo por día: al subir λ
+      se conservan los saltos que ya había y solo aparecen nuevos.</p>
+    </div>
+    <div class="panel-grafico">
+      <canvas id="merton-canvas"></canvas>
+      <p class="lectura" id="merton-lectura"></p>
+    </div>
+  </div>
+
+  <h2>Qué explica y qué no</h2>
+  <ul class="honesto">
+    <li>Explica bien: <em>[completar con nuestras palabras: colas gordas, riesgo de evento
+        separado del ruido diario, earnings]</em></li>
+    <li>No explica: <em>[completar: clustering de volatilidad, saltos que no son
+        independientes entre sí, el umbral es una elección nuestra]</em></li>
+  </ul>
 </section>
 
 <section id="ou" hidden>
@@ -223,5 +308,6 @@
 <script src="js/datos.js"></script>
 <script src="js/grafico.js"></script>
 <script src="js/app.js"></script>
+<script src="js/merton.js"></script>
 </body>
 </html>

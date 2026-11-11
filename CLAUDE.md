@@ -48,12 +48,16 @@ Machine learning: fuera del aplicativo por ahora.
 - Calibración (taller): x = ln(P_t/P_{t−1}), s muestral con n − 1,
   σ̂ = s·√252, μ̂ = 252·x̄ + σ̂²/2.
 - Primero que todo funcione; el diseño visual se pule al final (fase 8).
+- Esquema de simulación (11 nov): modelos de PRECIO (GBM, Merton, fBm, manada) con
+  transición exacta en logaritmos, como el taller (precios siempre positivos; con
+  Euler el fBm con H bajo daba precios negativos). OU (nivel) con Euler-Maruyama,
+  como las diapositivas. Merton compensado (μ − λk) y con azar de saltos fijo por
+  día: subir λ solo agrega saltos. fBm geométrico: exp[μt − σ²t^(2H)/2 + σB_H(t)],
+  la media no cambia con H. Revisar que el equipo pueda sustentarlo.
+- Versión controlada con git (repo local, sin remoto). `datos/cache/` no se versiona.
 
 ## Pendiente de decidir
 
-- Esquema de simulación: hoy `modelos.js` usa Euler-Maruyama (diapositivas). El taller
-  usa transición exacta para el GBM (garantiza precios positivos). Elegir uno y
-  justificarlo; los demás modelos (Merton, OU, fBm, manada) usan Euler.
 - Opciones reales: método (binomial CRR / Black-Scholes) y tipos de opción.
 - Manada: Kirman (implementado) vs modelo de umbral.
 
@@ -63,20 +67,20 @@ Cumple:
 - auto_adjust=True para retornos.
 - La fecha `end` es exclusiva (yfinance) — el servidor la pasa tal cual.
 - Respaldo si falla la descarga (caché), y el aplicativo avisa cuando la usa.
+- Ordena fechas, elimina duplicados, descarta faltantes y no positivos sin inventar
+  retornos, y reporta los descartes (`limpiar_serie` en servidor.py).
+- Resumen de calidad en el panel de calibración (n válidos/recibidos, rango, descartes,
+  fuente, fecha y hora de consulta, versiones de yfinance y pandas).
+- Versiones fijadas en requirements.txt (yfinance 1.7.0, pandas 3.0.2).
+- Verificado con Yahoo real (11 nov): ^GSPC y COP=X funcionan; el split de NVDA
+  (jun. 2024) no produce salto falso (retorno máx. 5 % en esa ventana).
 
-Falta implementar en `servidor.py` / `js/datos.js`:
-- Ordenar fechas y eliminar duplicados.
-- Revisar precios no positivos y faltantes; **no inventar retornos cero**.
-  Reportar cuántos datos se descartaron.
-- Mostrar en el aplicativo un resumen de calidad (n precios, rango real de fechas,
-  descartes, fuente, fecha y hora de la consulta).
+Falta:
 - Cierre **sin ajustar** como S₀ cuando se valoren opciones (fase 6); ajustado para retornos.
 - Opción de cargar un CSV propio si la descarga falla, registrando la procedencia.
-- Guardar las versiones de las bibliotecas (yfinance, pandas) usadas.
-- Verificar tickers especiales: índices (^GSPC), divisas (COP=X), y splits
-  (NVDA 10:1 en jun. 2024 — con auto_adjust no debería verse un salto falso).
-- Mínimo de observaciones: el taller pide ≥ 756 retornos para su rolling; para
-  este aplicativo hoy exigimos ≥ 30. Decidir el mínimo razonable por módulo.
+- Mínimo de observaciones: el taller pide ≥ 756 retornos para su rolling; hoy
+  exigimos ≥ 30, y el rango por defecto (3 años) da ~750. Decidir por módulo.
+- Divisas cotizan ~260 días/año (COP=X), no 252: decidir cómo anualizar.
 
 ## Cómo correrlo
 
@@ -86,8 +90,13 @@ python servidor.py          # abre http://localhost:8000
 python datos/descarga_datos.py   # antes de la sustentación: precarga la caché
 ```
 
-## Estado (10 nov 2026)
+## Estado (11 nov 2026)
 
 Hechos: esqueleto, inicio con el mapa de supuestos, módulo GBM con datos reales y
-calibración paso a paso. Probado con datos simulados; **falta la primera prueba con
-Yahoo real**. Siguiente: revisión de datos (lista de arriba), luego fase 2 (Merton).
+calibración paso a paso, probado de punta a punta con Yahoo real. Revisión del 11 nov:
+esquema exacto para precios, Merton con ruido fijo y compensado, validación de datos,
+el servidor solo entrega index.html, css/, js/ y contexto/.
+Fase 2 (Merton) hecha el 11 nov, pendiente de revisión del equipo. Cada módulo es un
+archivo propio que se registra en `MODULOS` (app.js) y reutiliza `conectarFormularioDatos`.
+Manada y opciones reales se deciden cuando toque esa fase.
+Siguiente: revisión de F2 → F3 (OU).
