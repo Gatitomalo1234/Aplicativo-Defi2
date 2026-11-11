@@ -107,5 +107,7 @@ el servidor solo entrega index.html, css/, js/ y contexto/.
 Fase 2 (Merton) hecha el 11 nov, pendiente de revisión del equipo. Cada módulo es un
 archivo propio que se registra en `MODULOS` (app.js) y reutiliza `conectarFormularioDatos`.
 Manada y opciones reales se deciden cuando toque esa fase.
-F3 (OU) hecha el 11 nov, pendiente de revisión.
-Siguiente: revisión de F3 → F4 (browniano fraccional).
+F3 (OU) revisada. F4 (fBm) hecha el 11 nov, pendiente de revisión.
+F5 (manada) y F6 (opciones reales) EN PAUSA: deben basarse en lo que presentaron los
+compañeros del curso; Nicolás trae ese material antes de construirlas.
+Siguiente: rediseño visual (F8) a partir de páginas de ejemplo que trae Nicolás.

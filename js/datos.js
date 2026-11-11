@@ -151,3 +151,51 @@ function calibrarOU(valores) {
     vidaMediaDias: (Math.LN2 / kappa) * DIAS_HABILES,
   };
 }
+
+// Calibración del browniano fraccional: exponente de Hurst por escalamiento de la varianza.
+//   Si se suman los log-retornos en bloques de k días (sin traslape), la desviación
+//   de esas sumas crece como k^H:   sd_k = c · k^H   →   ln sd_k = ln c + H · ln k.
+//   Retornos independientes (GBM): H = 0.5, la volatilidad crece como √k.
+//   Ĥ es la pendiente de la regresión de ln sd_k contra ln k.
+//   σ̂ = c · 252^Ĥ: la volatilidad a un año que predice la recta (en el modelo,
+//   la desviación del log-precio a t años es σ·t^H). μ̂ = 252·x̄ + σ̂²/2, como en el GBM.
+//   Se usan bloques de hasta n/10 días, para tener al menos 10 sumas en cada uno.
+const BLOQUES_HURST = [1, 2, 3, 5, 7, 10, 15, 20, 30, 40, 60];
+
+function calibrarFBM(precios) {
+  const r = logRetornos(precios);
+  const n = r.length;
+  const media = r.reduce((a, b) => a + b, 0) / n;
+  const puntos = [];
+  for (const k of BLOQUES_HURST) {
+    const nb = Math.floor(n / k);
+    if (nb < 10) break;
+    const sumas = [];
+    for (let b = 0; b < nb; b++) {
+      let s = 0;
+      for (let i = b * k; i < (b + 1) * k; i++) s += r[i];
+      sumas.push(s);
+    }
+    const m = sumas.reduce((a, b) => a + b, 0) / nb;
+    const sd = Math.sqrt(sumas.reduce((a, b) => a + (b - m) ** 2, 0) / (nb - 1));
+    puntos.push({ k, bloques: nb, sd });
+  }
+  // regresión lineal de ln sd contra ln k
+  const xs = puntos.map((p) => Math.log(p.k)), ys = puntos.map((p) => Math.log(p.sd));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < xs.length; i++) {
+    sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; syy += (ys[i] - my) ** 2;
+  }
+  const H = sxy / sxx;
+  const lnC = my - H * mx;
+  const sigma = Math.exp(lnC) * Math.pow(DIAS_HABILES, H);
+  const s = puntos[0].sd; // k = 1: la desviación diaria de siempre
+  return {
+    H, c: Math.exp(lnC), r2: (sxy * sxy) / (sxx * syy), puntos,
+    sigma, mu: DIAS_HABILES * media + (sigma * sigma) / 2,
+    sigmaGBM: s * Math.sqrt(DIAS_HABILES),
+    s0: precios[precios.length - 1], nRetornos: n, media,
+  };
+}

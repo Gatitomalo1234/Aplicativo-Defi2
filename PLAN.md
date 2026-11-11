@@ -57,6 +57,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/app.js` — navegación, piezas comunes (formulario de datos, lectura) y módulo GBM
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `js/ou.js` — módulo de Ornstein-Uhlenbeck
+- `js/fbm.js` — módulo del browniano fraccional
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
 - `datos/cache/` — se crea solo al descargar
 
@@ -76,7 +77,11 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
   distribución del primer taller (ej. 3 de liquidez como ejemplo inicial; responde sus
   preguntas a 3, 6 y 12 meses). Banda sin reversión (κ = 0) en punteado, θ como línea.
   Calibración AR(1); atajos VIX y TRM.
-- **F4**: fBm (slider H con las mismas Z; Hurst estimado sobre la serie cargada)
+- **F4 — hecho (11 nov), en revisión del equipo**: fBm geométrico
+  S(t) = S(0)exp[μt − σ²t^(2H)/2 + σB_H(t)]. H arranca en 0.5 (= GBM, punteado); ρ(1) =
+  2^(2H−1) − 1 en la lectura. Ĥ por escalamiento de la varianza (bloques de k días,
+  regresión log-log) con gráfico. Precisión documentada: sesgo −0.02/−0.03, ±0.05 con
+  3 años. Resultados: NVDA 0.48, S&P 10 años 0.41, VIX 10 años 0.37.
 - **F5**: Manada (Kirman: ε cambio propio, δ imitación; GameStop 2021 y S&P 2007-09)
 - **F6**: Opciones reales (propuesta, por confirmar con lo visto en clase):
   - árbol binomial CRR del curso aplicado al valor del proyecto

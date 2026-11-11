@@ -334,3 +334,70 @@ function dibujarHistograma(canvas, retornos, opciones = {}) {
   ctx.textAlign = "right";
   ctx.fillText("altura: √(número de días)", margen.izq + W, 11);
 }
+
+// Gráfico log-log del escalamiento de la varianza (browniano fraccional).
+// puntos: [{ k, sd }]; ajuste: { H, c } -> recta sd = c·k^H;
+// también se dibuja la recta de pendiente 0.5 (sin memoria) por el punto k = 1.
+function dibujarLogLog(canvas, puntos, ajuste) {
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = canvas.clientWidth, alto = canvas.clientHeight;
+  canvas.width = ancho * dpr;
+  canvas.height = alto * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  ctx.font = "11px -apple-system, 'Segoe UI', sans-serif";
+
+  const margen = { izq: 58, der: 14, arr: 26, aba: 34 };
+  const W = ancho - margen.izq - margen.der;
+  const H = alto - margen.arr - margen.aba;
+  const lk = puntos.map((p) => Math.log(p.k)), ls = puntos.map((p) => Math.log(p.sd));
+  const ref = (k) => Math.log(puntos[0].sd) + 0.5 * Math.log(k); // pendiente 0.5
+  const fit = (k) => Math.log(ajuste.c) + ajuste.H * Math.log(k);
+  const xMin = 0, xMax = Math.max(...lk);
+  const kMax = puntos[puntos.length - 1].k;
+  let yMin = Math.min(...ls, ref(1), fit(1)), yMax = Math.max(...ls, ref(kMax), fit(kMax));
+  const holg = (yMax - yMin) * 0.08;
+  yMin -= holg; yMax += holg;
+  const px = (x) => margen.izq + ((x - xMin) / (xMax - xMin || 1)) * W;
+  const py = (y) => margen.arr + (1 - (y - yMin) / (yMax - yMin)) * H;
+
+  // ejes: k en días (escala log) y sd en % (escala log)
+  ctx.strokeStyle = ESTILO_GRAFICO.rejilla; ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.lineWidth = 1;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const p of puntos) {
+    ctx.beginPath(); ctx.moveTo(px(Math.log(p.k)), margen.arr); ctx.lineTo(px(Math.log(p.k)), margen.arr + H); ctx.stroke();
+    ctx.fillText(String(p.k), px(Math.log(p.k)), margen.arr + H + 6);
+  }
+  ctx.fillText("k (días por bloque, escala logarítmica)", margen.izq + W / 2, margen.arr + H + 20);
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let g = 0; g <= 3; g++) {
+    const y = yMin + ((yMax - yMin) * g) / 3;
+    ctx.fillText(`${(Math.exp(y) * 100).toFixed(1)} %`, margen.izq - 6, py(y));
+  }
+
+  const recta = (f, color, guion) => {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash(guion);
+    ctx.beginPath(); ctx.moveTo(px(0), py(f(1))); ctx.lineTo(px(xMax), py(f(kMax))); ctx.stroke();
+    ctx.setLineDash([]);
+  };
+  recta(ref, ESTILO_GRAFICO.referencia, [5, 4]);
+  recta(fit, ESTILO_GRAFICO.mediana, []);
+  ctx.fillStyle = ESTILO_GRAFICO.historico;
+  for (let i = 0; i < puntos.length; i++) {
+    ctx.beginPath(); ctx.arc(px(lk[i]), py(ls[i]), 3.5, 0, 2 * Math.PI); ctx.fill();
+  }
+
+  // leyenda
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  let lx = margen.izq;
+  ctx.fillStyle = ESTILO_GRAFICO.historico; ctx.beginPath(); ctx.arc(lx + 5, 10, 3.5, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("desviación de las sumas de k días", lx + 14, 10);
+  lx += 200;
+  ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(lx, 9, 14, 2);
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText(`ajuste: pendiente Ĥ = ${ajuste.H.toFixed(2)}`, lx + 18, 10);
+  lx += 160;
+  ctx.strokeStyle = ESTILO_GRAFICO.referencia; ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(lx, 10); ctx.lineTo(lx + 14, 10); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText("pendiente 0.5 (sin memoria)", lx + 18, 10);
+}

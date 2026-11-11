@@ -138,6 +138,9 @@ function choleskyFGN(H, n) {
       L[i][j] = i === j ? Math.sqrt(Math.max(suma, 1e-12)) : suma / L[j][j];
     }
   }
+  // cada matriz ocupa ~1 MB con n = 504: se guardan solo las últimas 20
+  const claves = Object.keys(_cacheCholesky);
+  if (claves.length >= 20) delete _cacheCholesky[claves[0]];
   _cacheCholesky[clave] = L;
   return L;
 }

@@ -279,3 +279,12 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   border: 1px solid var(--acento);
 }
 .datos-mercado .atajos button:hover { background: var(--acento-suave); }
+
+/* fBm: tabla de bloques del exponente de Hurst */
+.tabla-hurst { border-collapse: collapse; margin: 0 0 6px 18px; }
+.tabla-hurst th, .tabla-hurst td {
+  text-align: right;
+  padding: 3px 12px;
+  border-bottom: 1px solid var(--linea);
+}
+.histograma canvas#fbm-loglog { height: 240px; }

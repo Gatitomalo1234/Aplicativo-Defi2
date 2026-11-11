@@ -311,16 +311,87 @@
 <section id="fbm" hidden>
   <h1>Browniano fraccional</h1>
   <p class="bajada">Rompe la independencia de incrementos: el mercado tiene memoria.</p>
-  <div class="pendiente">
-    <p>Fase 4. Claves del módulo:</p>
-    <ul>
-      <li>Slider de H con las mismas Z: 0.2 anti-persistente → 0.5 colapsa al GBM →
-          0.8 tendencial.</li>
-      <li>Cómo lo simulamos: correlacionamos las mismas normales con la matriz de
-          covarianzas del fGn (Cholesky) — ya implementado en modelos.js.</li>
-      <li>Exponente de Hurst estimado sobre una serie real.</li>
-    </ul>
+
+  <h2>La ecuación, símbolo a símbolo</h2>
+  <p class="ecuacion">S(t) = S(0) · exp[ μt − (σ²/2)·t<sup>2H</sup> &nbsp;+&nbsp; σ · B<sub>H</sub>(t) ]</p>
+  <ul class="parametros">
+    <li><b>B<sub>H</sub>(t)</b> — browniano fraccional: normal con media 0 y varianza t<sup>2H</sup>.
+        Con H = 0.5 es el browniano B(t) de siempre y el modelo es el GBM.</li>
+    <li><b>H</b> — exponente de Hurst, entre 0 y 1. Mide la memoria: la correlación entre
+        el retorno de un día y el del siguiente es ρ = 2<sup>2H−1</sup> − 1.
+        <br>H &lt; 0.5: ρ &lt; 0, lo que sube tiende a corregirse (sobre-reacción).
+        <br>H = 0.5: ρ = 0, sin memoria.
+        <br>H &gt; 0.5: ρ &gt; 0, lo que sube tiende a seguir subiendo (momentum).</li>
+    <li><b>σ</b> — volatilidad a un año. El término −(σ²/2)t<sup>2H</sup> hace que el precio
+        esperado sea S(0)e<sup>μt</sup> para cualquier H: mover H no cambia la tendencia,
+        solo la forma de las trayectorias.</li>
+  </ul>
+  <p class="aclaracion">Por qué no se escribe como dS = … dB<sub>H</sub>: con H ≠ 0.5 el browniano
+  fraccional no es una semimartingala y el lema de Itô no aplica. Por eso el modelo se
+  define directamente con la solución. Cómo se simula: las mismas normales Z se
+  correlacionan con la matriz de covarianzas de los incrementos (factorización de Cholesky).</p>
+
+  <h2>Datos de mercado</h2>
+  <form class="datos-mercado" id="fbm-form">
+    <label>Ticker de Yahoo Finance
+      <input type="text" id="fbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
+    </label>
+    <label>Desde <input type="date" id="fbm-desde"></label>
+    <label>Hasta <input type="date" id="fbm-hasta"></label>
+    <button type="submit" id="fbm-cargar">Cargar y calibrar</button>
+  </form>
+  <p class="estado" id="fbm-estado" role="status">Sin datos cargados: el simulador usa
+  parámetros de ejemplo, arranca en 100 y con H = 0.5 (sin memoria).</p>
+  <div class="calibracion" id="fbm-calibracion" hidden></div>
+  <div class="histograma" id="fbm-loglog-caja" hidden>
+    <h3>Escalamiento de la volatilidad</h3>
+    <canvas id="fbm-loglog"></canvas>
+    <p class="aclaracion">Si los puntos suben más empinados que la línea punteada, la volatilidad
+    crece más rápido que √k: hay memoria persistente (H &gt; 0.5). Precisión del método: en una
+    prueba con 30 series simuladas de 3 años, Ĥ salió en promedio 0.02 a 0.03 por debajo del
+    H real, con una dispersión de ±0.05. Con 3 años de datos, un Ĥ entre 0.4 y 0.6 no se
+    puede distinguir de 0.5.</p>
   </div>
+
+  <h2>Simulador</h2>
+  <div class="simulador">
+    <div class="controles">
+      <label>μ tendencia anual <output id="fbm-mu-out">8.0 %</output>
+        <input type="range" id="fbm-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
+      </label>
+      <label>σ volatilidad a un año <output id="fbm-sigma-out">25.0 %</output>
+        <input type="range" id="fbm-sigma" min="0.05" max="1.50" step="0.001" value="0.25">
+      </label>
+      <label>H exponente de Hurst <output id="fbm-H-out">0.50</output>
+        <input type="range" id="fbm-H" min="0.05" max="0.95" step="0.01" value="0.5">
+      </label>
+      <label>horizonte <output id="fbm-dias-out">252 días</output>
+        <input type="range" id="fbm-dias" min="21" max="504" step="21" value="252">
+      </label>
+      <label>trayectorias <output id="fbm-n-out">200</output>
+        <input type="range" id="fbm-n" min="20" max="400" step="20" value="200">
+      </label>
+      <button id="fbm-sin-memoria" type="button">H = 0.5 (GBM)</button>
+      <button id="fbm-semilla" type="button">Cambiar semilla</button>
+      <button id="fbm-reiniciar" type="button">Modo sustentación</button>
+      <p class="aclaracion">Con σ fijo, a un año la distribución teórica del precio es la
+      misma para todo H (desviación del log-precio σ·1<sup>H</sup> = σ); a otros horizontes es
+      σ·T<sup>H</sup> y las bandas se separan. Lo que cambia es la forma
+      de los caminos: con H bajo son más erráticos, con H alto más suaves y tendenciales.</p>
+    </div>
+    <div class="panel-grafico">
+      <canvas id="fbm-canvas"></canvas>
+      <p class="lectura" id="fbm-lectura"></p>
+    </div>
+  </div>
+
+  <h2>Qué explica y qué no</h2>
+  <ul class="honesto">
+    <li>Explica bien: <em>[completar con nuestras palabras: momentum y sobre-reacción, qué
+        dice el Ĥ de la serie real]</em></li>
+    <li>No explica: <em>[completar: con H ≠ 0.5 no aplica Itô y el modelo permite arbitraje
+        si se usa para valorar; H constante en el tiempo]</em></li>
+  </ul>
 </section>
 
 <section id="manada" hidden>
@@ -375,5 +446,6 @@
 <script src="js/app.js"></script>
 <script src="js/merton.js"></script>
 <script src="js/ou.js"></script>
+<script src="js/fbm.js"></script>
 </body>
 </html>
