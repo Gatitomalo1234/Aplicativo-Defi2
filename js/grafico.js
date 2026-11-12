@@ -120,7 +120,8 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   ctx.textBaseline = "top";
   if (desfase) {
     ctx.textAlign = "left";  ctx.fillText(`hace ${desfase} días`, px(0), alto - margen.aba + 6);
-    ctx.textAlign = "center"; ctx.fillText("hoy", px(desfase), alto - margen.aba + 6);
+    // «hoy» solo si no se pisa con «hace … días» (pronósticos largos dejan la historia angosta)
+    if (px(desfase) - px(0) > 110) { ctx.textAlign = "center"; ctx.fillText("hoy", px(desfase), alto - margen.aba + 6); }
   } else {
     ctx.textAlign = "left"; ctx.fillText("hoy", px(0), alto - margen.aba + 6);
   }
@@ -413,7 +414,8 @@ function dibujarLogLog(canvas, puntos, ajuste) {
 }
 
 // Línea de precio en el tiempo (sección «Toma de datos»), con hover: fecha y valor.
-// opciones: { sombra: [i0, i1] -> franja resaltada (ventana), marcas: Set de índices -> puntos }
+// opciones: { sombra: [i0, i1] -> franja resaltada (ventana), marcas: Set de índices -> puntos,
+//   horizontal: { valor, nombre } -> línea de referencia punteada (Vasicek: tasa constante) }
 function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), hoverIndice = null, opciones = {}) {
   if (!canvas.clientWidth) return;
   const dpr = window.devicePixelRatio || 1;
@@ -430,7 +432,11 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
   const H = alto - margen.arr - margen.aba;
   const n = valores.length;
   let yMin = Math.min(...valores), yMax = Math.max(...valores);
-  const holgura = (yMax - yMin) * 0.08 || 1;
+  if (opciones.horizontal) {
+    yMin = Math.min(yMin, opciones.horizontal.valor);
+    yMax = Math.max(yMax, opciones.horizontal.valor);
+  }
+  const holgura = (yMax - yMin) * 0.08 || Math.abs(yMax) * 0.1 || 1;
   const positivos = yMin >= 0;
   yMin -= holgura; yMax += holgura;
   if (positivos) yMin = Math.max(0, yMin); // una serie positiva (precio, CSAD) no muestra eje negativo
@@ -470,6 +476,15 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
   ctx.beginPath(); ctx.moveTo(px(0), py(valores[0]));
   for (let i = 1; i < n; i++) ctx.lineTo(px(i), py(valores[i]));
   ctx.strokeStyle = ESTILO_GRAFICO.historico; ctx.lineWidth = opciones.sombra ? 1.2 : 1.5; ctx.stroke();
+
+  // línea de referencia horizontal con su nombre
+  if (opciones.horizontal) {
+    const yh = py(opciones.horizontal.valor);
+    ctx.strokeStyle = ESTILO_GRAFICO.referencia; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(margen.izq, yh); ctx.lineTo(margen.izq + W, yh); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = ESTILO_GRAFICO.referencia; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+    ctx.fillText(opciones.horizontal.nombre, margen.izq + W, yh - 4);
+  }
 
   // puntos en días especiales (manada: días extremos de la prueba CSSD)
   if (opciones.marcas) {

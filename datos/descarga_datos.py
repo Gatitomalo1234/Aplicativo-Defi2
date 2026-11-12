@@ -46,17 +46,19 @@ SERIES = [
     ("^TNX", *ultimos(5), "OU: bono 10 años EE. UU."),
     ("^IRX", *ultimos(5), "OU: letra del Tesoro 13 semanas"),
     ("COP=X", *ultimos(3), "OU: TRM 3 años"),
-    # 4 · Browniano fraccional
+    # 4 · Vasicek (la de 5 años ya está arriba, en OU)
+    ("^IRX", *ultimos(20), "Vasicek: letra del Tesoro 13 semanas, 20 años"),
+    # 5 · Browniano fraccional
     ("^GSPC", *ultimos(10), "fBm: S&P 500 10 años"),
     ("GLD", *ultimos(10), "fBm: oro 10 años"),
     ("^VIX", *ultimos(10), "fBm: VIX 10 años"),
-    # 6 · Opciones reales (σ de una empresa comparable)
+    # 7 · Opciones reales (σ de una empresa comparable)
     ("CIB", *ultimos(5), "opciones: Bancolombia 5 años"),
     ("XLE", *ultimos(5), "opciones: sector energía EE. UU."),
     ("GLD", *ultimos(5), "opciones: oro 5 años"),
 ]
 
-# 5 · Manada: canastas (cada acción se guarda por separado)
+# 6 · Manada: canastas (cada acción se guarda por separado)
 CANASTAS = [
     ("Acciones meme 2020-21", ["GME", "AMC", "BB", "NOK", "KOSS"], "2020-06-01", "2021-06-30"),
     ("Bancos EE. UU. 2006-09", ["JPM", "BAC", "C", "WFC", "GS", "MS"], "2006-01-01", "2009-12-31"),

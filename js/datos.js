@@ -67,6 +67,17 @@ function avisoOU(datos) {
     : `Ojo: ${datos.ticker} es un CSV propio. Si es un precio y no un nivel: ${base}`;
 }
 
+// Vasicek modela una tasa de interés de corto plazo (en %). Tasas conocidas de Yahoo:
+// ^IRX (13 semanas), ^FVX (5 años), ^TNX (10 años), ^TYX (30 años).
+const TASAS_CONOCIDAS = /^\^(IRX|FVX|TNX|TYX)$/;
+function avisoVasicek(datos) {
+  if (TASAS_CONOCIDAS.test(datos.ticker)) return null;
+  const base = "Vasicek modela una tasa de interés (en %): con otra serie, θ̂ y la curva de tasas no tienen sentido económico.";
+  return /CSV/.test(datos.fuente || "")
+    ? `Ojo: ${datos.ticker} es un CSV propio. Si no es una tasa en %: ${base}`
+    : `Ojo: ${datos.ticker} no parece una tasa de interés. ${base}`;
+}
+
 // Mínimo de precios para calibrar un modelo (la vista rápida acepta menos).
 const MINIMO_CALIBRAR = 30;
 

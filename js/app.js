@@ -6,7 +6,7 @@
 const MODULOS = {};
 
 // ---- navegación por hash ----
-const SECCIONES = ["inicio", "datos", "gbm", "merton", "ou", "fbm", "manada", "opciones", "comparacion"];
+const SECCIONES = ["inicio", "datos", "gbm", "merton", "ou", "vasicek", "fbm", "manada", "opciones"];
 
 function seccionActual() {
   const id = location.hash.replace("#", "") || "inicio";
@@ -98,7 +98,7 @@ function encabezadoDatos(datos) {
 const CARGADORES = {};      // prefijo -> alCargar(datos)
 const SOLTADORES = {};      // prefijo -> alSoltar(): vuelve a los parámetros de ejemplo
 const SERIES_EN_USO = {};   // prefijo -> datos de la serie que está usando
-const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm", opciones: "Opciones" }; // reciben una serie
+const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", vasicek: "Vasicek", fbm: "fBm", opciones: "Opciones" }; // reciben una serie
 const NOMBRE_MANADA = "Manada"; // recibe una canasta (varias series)
 
 // Una canasta es un grupo de series para el módulo de manada.
@@ -400,12 +400,24 @@ function ajustarPortada() {
   requestAnimationFrame(() => document.documentElement.classList.remove("sin-animar"));
 }
 
+// Mientras se ve la portada, la página no se puede desplazar: si algo la mueve (Chrome
+// restaura la posición donde estaba antes de recargar, o salta al #inicio), vuelve arriba.
+function fijarPortadaArriba() {
+  if (document.body.classList.contains("portada") && window.scrollY !== 0) window.scrollTo(0, 0);
+}
+
 function prepararEntrada() {
+  // que el navegador no restaure la posición de antes al recargar (cada módulo ya sube al abrirse)
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   if (seccionActual() !== "inicio") return; // abierto directo en un módulo: sin transición
   document.body.classList.add("portada");
   ajustarPortada();
   if (document.fonts) document.fonts.ready.then(ajustarPortada);
   window.addEventListener("resize", ajustarPortada);
+  window.addEventListener("scroll", fijarPortadaArriba);
+  window.addEventListener("load", ajustarPortada);
+  // volver con «atrás» desde otra página: el navegador la saca de memoria sin recargarla
+  window.addEventListener("pageshow", (ev) => { if (ev.persisted) ajustarPortada(); });
 
   let toqueY = null;
   const alDeslizar = (ev) => { if (ev.deltaY > 0) entrarAplicativo(); };
@@ -428,6 +440,7 @@ function prepararEntrada() {
     window.removeEventListener("touchmove", alMover);
     window.removeEventListener("keydown", alTeclear);
     window.removeEventListener("resize", ajustarPortada);
+    window.removeEventListener("scroll", fijarPortadaArriba);
     limpiar.disconnect();
   });
   limpiar.observe(document.body, { attributes: true, attributeFilter: ["class"] });

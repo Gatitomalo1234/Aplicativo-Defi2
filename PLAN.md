@@ -59,6 +59,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/app.js` — navegación, piezas comunes (formulario de datos, lectura) y módulo GBM
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `js/ou.js` — módulo de Ornstein-Uhlenbeck
+- `js/vasicek.js` — módulo de Vasicek (tasa corta, bono, curva de tasas)
 - `js/fbm.js` — módulo del browniano fraccional
 - `js/opciones.js` — módulo de opciones reales (árbol binomial)
 - `js/manada.js` — módulo de manada (CSAD/CSSD) y canastas recomendadas
@@ -82,6 +83,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
   distribución del primer taller (ej. 3 de liquidez como ejemplo inicial; responde sus
   preguntas a 3, 6 y 12 meses). Banda sin reversión (κ = 0) en punteado, θ como línea.
   Calibración AR(1); atajos VIX y TRM.
+- **F3b — hecho (11 nov), en revisión**: Vasicek como módulo 4 (OU de la tasa corta + bono cero
+  cupón con fórmula de Hull + curva de tasas), calibrado con ^IRX.
 - **F4 — hecho (11 nov), en revisión del equipo**: fBm geométrico
   S(t) = S(0)exp[μt − σ²t^(2H)/2 + σB_H(t)]. H arranca en 0.5 (= GBM, punteado); ρ(1) =
   2^(2H−1) − 1 en la lectura. Ĥ por escalamiento de la varianza (bloques de k días,
@@ -93,7 +96,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - **F6 — hecho (11 nov), en revisión**: opciones reales con árbol CRR (abandono, expansión,
   contracción), caso de la presentación de los compañeros, σ de una empresa comparable y
   paradoja de la volatilidad. VPN modificado = VPN estático + c.
-- **F7**: Comparación honesta de los modelos contra datos reales (RMSE rolling, QQ-plot de colas)
+- **F7 — descartada (11 nov)**: la comparación entre modelos no se hace. Los modelos no producen
+  lo mismo (precio, nivel, medida, decisión) y cada módulo ya se compara con el GBM en vivo.
 - **F8 — hecho (11 nov), en revisión**: rediseño completo (ver CLAUDE.md). Fuentes en
   `fuentes/` sin internet; servidor entrega `/fuentes/`.
 - **F9**: Textos "qué explica / qué no" con nuestras palabras + ensayo de sustentación

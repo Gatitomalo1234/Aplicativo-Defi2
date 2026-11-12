@@ -116,6 +116,39 @@ function normalAcumulada(x) {
   return x >= 0 ? 0.5 * (1 + erf) : 0.5 * (1 - erf);
 }
 
+// 3b. Vasicek (1977): la misma ecuación de OU, aplicada a la tasa de interés de corto plazo r.
+//    dr = κ(θ − r)dt + σ dW. El precio de un bono cero cupón que paga 1 en T (τ = T − t):
+//      B(t,T) = A(τ)·e^(−D(τ)·r(t))                                  (Hull, 8ª ed., ec. 30.6)
+//      D(τ) = (1 − e^(−κτ))/κ                                         (ec. 30.7)
+//      A(τ) = exp[ (D(τ) − τ)(κ²θ − σ²/2)/κ² − σ²·D(τ)²/(4κ) ]        (ec. 30.8)
+//    Con κ = 0: D = τ y A = e^(σ²τ³/6). Con κ = σ = 0: B = e^(−rτ), la ec. 68 de las diapositivas.
+//    Rendimiento a plazo τ (curva de tasas): R(τ) = −ln B / τ.
+//    Hull escribe a, b, σ y P(t,T); aquí κ, θ, σ (como en OU) y B(t,T) (como en el curso).
+function bonoVasicek({ r, kappa, theta, sigma }, tau) {
+  let D, lnA;
+  if (kappa < 1e-9) {
+    D = tau;
+    lnA = (sigma * sigma * tau * tau * tau) / 6;
+  } else {
+    D = (1 - Math.exp(-kappa * tau)) / kappa;
+    lnA = ((D - tau) * (kappa * kappa * theta - (sigma * sigma) / 2)) / (kappa * kappa) - (sigma * sigma * D * D) / (4 * kappa);
+  }
+  const lnB = lnA - D * r;
+  return { B: Math.exp(lnB), D, A: Math.exp(lnA), R: tau > 0 ? -lnB / tau : r };
+}
+
+// Comprobación con las trayectorias: B ≈ promedio de e^(−∫r ds), con la integral por trapecios.
+function bonoSimulado(caminos) {
+  const valores = caminos.map((c) => {
+    let integral = 0;
+    for (let j = 1; j < c.length; j++) integral += ((c[j - 1] + c[j]) / 2) * DT;
+    return Math.exp(-integral);
+  });
+  const media = valores.reduce((a, b) => a + b, 0) / valores.length;
+  const sd = Math.sqrt(valores.reduce((a, b) => a + (b - media) ** 2, 0) / (valores.length - 1));
+  return { B: media, error: sd / Math.sqrt(valores.length) }; // error estándar de Monte Carlo
+}
+
 // 4. Browniano fraccional (rompe la independencia de incrementos)
 //    Correlacionamos las MISMAS normales Z con la matriz de covarianzas del
 //    ruido gaussiano fraccional (fGn) via Cholesky. Con H = 0.5 la matriz es la

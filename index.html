@@ -18,10 +18,10 @@
     <a href="#gbm" data-seccion="gbm"><span class="num">1</span>GBM</a>
     <a href="#merton" data-seccion="merton"><span class="num">2</span>Merton</a>
     <a href="#ou" data-seccion="ou"><span class="num">3</span>OU</a>
-    <a href="#fbm" data-seccion="fbm"><span class="num">4</span>fBm</a>
-    <a href="#manada" data-seccion="manada"><span class="num">5</span>Manada</a>
-    <a href="#opciones" data-seccion="opciones"><span class="num">6</span>Opciones</a>
-    <a href="#comparacion" data-seccion="comparacion">Comparación</a>
+    <a href="#vasicek" data-seccion="vasicek"><span class="num">4</span>Vasicek</a>
+    <a href="#fbm" data-seccion="fbm"><span class="num">5</span>fBm</a>
+    <a href="#manada" data-seccion="manada"><span class="num">6</span>Manada</a>
+    <a href="#opciones" data-seccion="opciones"><span class="num">7</span>Opciones</a>
   </nav>
 </header>
 
@@ -55,13 +55,19 @@
 
   <div class="tarjeta ancho">
     <div class="tarjeta-cabeza"><h2>El mapa de supuestos</h2><span class="nota-cabeza">cada modelo rompe uno</span></div>
-    <div class="mapa">
-    <a class="fila" href="#gbm">
+    <a class="mapa-base" href="#gbm">
       <span class="fila-num">1</span>
-      <strong>Browniano geométrico</strong>
-      <span class="supuesto">el mercado idealizado, completo</span>
-      <span class="gana">el benchmark contra el que se mide todo lo demás</span>
+      <div class="mapa-texto">
+        <strong>Browniano geométrico</strong>
+        <span class="gana">el mercado perfecto: el punto de partida y la referencia de todo lo demás</span>
+      </div>
+      <div class="mapa-supuestos" aria-label="Sus supuestos">
+        <span>trayectorias continuas</span><span>tendencia constante</span><span>tasa de interés constante</span>
+        <span>incrementos independientes</span><span>agentes que deciden solos</span>
+      </div>
     </a>
+    <p class="mapa-flecha">cada modelo rompe uno de esos supuestos</p>
+    <div class="mapa">
     <a class="fila" href="#merton">
       <span class="fila-num">2</span>
       <strong>Saltos de Merton</strong>
@@ -72,27 +78,35 @@
       <span class="fila-num">3</span>
       <strong>Ornstein-Uhlenbeck</strong>
       <span class="supuesto"><s>la tendencia es constante</s></span>
-      <span class="gana">hay fuerzas que jalan al equilibrio: tasas, spreads</span>
+      <span class="gana">hay fuerzas que jalan al equilibrio: VIX, tasas, spreads</span>
+    </a>
+    <a class="fila" href="#vasicek">
+      <span class="fila-num">4</span>
+      <strong>Modelo de Vasicek</strong>
+      <span class="supuesto"><s>la tasa de interés es constante</s></span>
+      <span class="gana">la curva de tasas: bonos a distintos plazos pagan tasas distintas</span>
     </a>
     <a class="fila" href="#fbm">
-      <span class="fila-num">4</span>
+      <span class="fila-num">5</span>
       <strong>Browniano fraccional</strong>
       <span class="supuesto"><s>los incrementos son independientes</s></span>
       <span class="gana">el mercado tiene memoria: momentum y sobre-reacción</span>
     </a>
     <a class="fila" href="#manada">
-      <span class="fila-num">5</span>
+      <span class="fila-num">6</span>
       <strong>Comportamiento en manada</strong>
       <span class="supuesto"><s>los agentes deciden solos</s></span>
       <span class="gana">¿se mueven juntas las acciones en días extremos? lo medimos con CSAD y CSSD</span>
     </a>
-    <a class="fila" href="#opciones">
-      <span class="fila-num">6</span>
-      <strong>Opciones reales</strong>
-      <span class="supuesto">no rompe un supuesto</span>
-      <span class="gana">usa los modelos para decidir: cuánto vale la flexibilidad de un proyecto</span>
-    </a>
     </div>
+    <p class="mapa-flecha">y con ellos se toma una decisión</p>
+    <a class="mapa-base mapa-cierre" href="#opciones">
+      <span class="fila-num">7</span>
+      <div class="mapa-texto">
+        <strong>Opciones reales</strong>
+        <span class="gana">no rompe un supuesto: usa los modelos para decidir cuánto vale la flexibilidad de un proyecto</span>
+      </div>
+    </a>
   </div>
 
   <div class="tarjeta ancho">
@@ -474,10 +488,122 @@
   </div>
 </section>
 
+<section id="vasicek" class="tablero" hidden>
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 4 · rompe la tasa constante</p>
+      <h1>Modelo de <span class="resalte">Vasicek</span></h1>
+      <p class="bajada">La tasa de interés también se mueve: OU aplicado a la tasa de corto plazo, y con ella el precio de los bonos.</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">La tasa corta: la misma ecuación de OU (Vasicek, 1977)</p>
+      <p class="ecuacion">dr(t) = κ (θ − r(t)) dt &nbsp;+&nbsp; σ dW(t)</p>
+      <p class="etiqueta">Bono cero cupón que paga 1 en T, con τ = T − t (Hull, ec. 30.6–30.8)</p>
+      <p class="ecuacion">B(t,T) = A(τ) · e<sup>−D(τ)·r(t)</sup><br>
+      D(τ) = (1 − e<sup>−κτ</sup>)/κ<br>
+      A(τ) = exp[ (D − τ)(κ²θ − σ²/2)/κ² − σ²D²/(4κ) ]</p>
+    </div>
+  </div>
+
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">r</span><div><p>Tasa de interés de corto plazo. Se mueve como en OU: vuelve hacia θ con velocidad κ.</p></div></li>
+      <li><span class="simbolo">B(t,T)</span><div><p>Precio hoy de un bono que paga 1 en T, como en las diapositivas (renta fija, ec. 68). Con tasa constante es B = e<sup>−rτ</sup>.</p></div></li>
+      <li><span class="simbolo">D(τ)</span><div><p>Cuánto cae el precio del bono si sube la tasa corta: una duración. Hull, ej. 30.1: con κ = 0.1 y τ = 4 años, D = 3.29.</p></div></li>
+      <li><span class="simbolo">R(τ)</span><div><p>Rendimiento a τ años: R = −ln B / τ. Dibujado para todos los plazos es la curva de tasas.</p></div></li>
+    </ul>
+    <p class="aclaracion">Con κ = 0 y σ = 0 la fórmula vuelve a la ec. 68 del curso, B = e<sup>−rτ</sup>: la tasa constante es un
+    caso particular. Aquí el browniano se escribe W, como en la diap. 134, para no confundirlo con el bono B(t,T).
+    Hull usa a, b, σ y P(t,T): a = κ, b = θ y P = B.</p>
+  </div>
+
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">serie en uso</span></div>
+    <div class="serie-en-uso" id="vasicek-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="vasicek">Elegir serie en Toma de datos</a>
+      <button type="button" class="boton" id="vasicek-quitar" hidden>Quitar serie</button>
+    </div>
+    <p class="estado aviso" id="vasicek-aviso" role="status" hidden></p>
+    <p class="estado" id="vasicek-estado" role="status">Sin datos cargados: parámetros de ejemplo (r₀ = 3 %, θ = 5 %).
+    Con datos, la tasa se toma en % y se pasa a decimal.</p>
+  </div>
+  <div class="tarjeta col-5 kpi" id="vasicek-kpi"></div>
+
+  <div class="tarjeta ancho calibracion" id="vasicek-calibracion" data-parte="calibracion" hidden></div>
+
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>La tasa corta en el tiempo</h2><span class="nota-cabeza">mismas Z · solución en distribución de OU</span></div>
+    <div class="simulador">
+      <div class="controles">
+        <label><span>r₀ tasa corta hoy</span> <output id="vasicek-r0-out"></output>
+          <input type="range" id="vasicek-r0" min="-0.02" max="0.15" step="0.0005" value="0.03">
+        </label>
+        <label><span>θ equilibrio</span> <output id="vasicek-theta-out"></output>
+          <input type="range" id="vasicek-theta" min="-0.02" max="0.15" step="0.0005" value="0.05">
+        </label>
+        <label><span>κ velocidad de corrección</span> <output id="vasicek-kappa-out"></output>
+          <input type="range" id="vasicek-kappa" min="0" max="3" step="0.01" value="0.3">
+        </label>
+        <label><span>σ volatilidad de la tasa</span> <output id="vasicek-sigma-out"></output>
+          <input type="range" id="vasicek-sigma" min="0" max="0.05" step="0.0005" value="0.01">
+        </label>
+        <label><span>T plazo del bono</span> <output id="vasicek-T-out"></output>
+          <input type="range" id="vasicek-T" min="1" max="30" step="1" value="10">
+        </label>
+        <label><span>trayectorias</span> <output id="vasicek-n-out"></output>
+          <input type="range" id="vasicek-n" min="20" max="400" step="20" value="200">
+        </label>
+        <div class="botones">
+          <button type="button" id="vasicek-constante">Tasa constante (κ = σ = 0)</button>
+          <button type="button" id="vasicek-semilla">Cambiar semilla</button>
+          <button type="button" id="vasicek-reiniciar">Modo sustentación</button>
+        </div>
+        <p class="aclaracion">«Tasa constante» deja r fija en r₀: el bono vuelve a B = e<sup>−r₀T</sup> y la curva
+        de tasas queda plana.</p>
+      </div>
+      <div class="panel-grafico">
+        <canvas id="vasicek-canvas"></canvas>
+        <div class="fichas" id="vasicek-fichas"></div>
+        <p class="lectura" id="vasicek-lectura"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Curva de tasas</h2><span class="nota-cabeza">R(τ) para bonos de 3 meses a 30 años</span></div>
+    <div class="dos-columnas">
+      <div><canvas id="vasicek-curva" class="canvas-paradoja"></canvas></div>
+      <div>
+        <p class="texto-paradoja" id="vasicek-forma"></p>
+        <div id="vasicek-pasos"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <ul class="puntos">
+      <li>Por qué los bonos a distintos plazos pagan tasas distintas: la curva sube si la tasa de hoy está por debajo de su equilibrio y baja si está por encima.</li>
+      <li>Un precio de bono con fórmula cerrada, que coincide con el promedio de las trayectorias simuladas.</li>
+      <li>Qué tan sensible es un bono a la tasa: D(τ) crece con el plazo, pero menos que τ por la reversión a la media.</li>
+    </ul>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <ul class="puntos">
+      <li>La tasa puede volverse negativa: el modelo CIR evita ese problema.</li>
+      <li>La calibración depende mucho de la ventana: con 5 años de ^IRX θ̂ ≈ 4.9 %, con 20 años θ̂ ≈ 1.2 %.</li>
+      <li>Calibrar con datos históricos no da la medida neutral al riesgo: se asume que el riesgo de tasa no tiene prima.</li>
+    </ul>
+  </div>
+</section>
+
 <section id="fbm" class="tablero" hidden>
   <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
-      <p class="eyebrow">Módulo 4 · rompe la independencia de incrementos</p>
+      <p class="eyebrow">Módulo 5 · rompe la independencia de incrementos</p>
       <h1>Browniano <span class="resalte">fraccional</span></h1>
       <p class="bajada">El mercado tiene memoria.</p>
     </div>
@@ -582,7 +708,7 @@
 <section id="manada" class="tablero" hidden>
   <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
-      <p class="eyebrow">Módulo 5 · rompe la independencia de los agentes</p>
+      <p class="eyebrow">Módulo 6 · rompe la independencia de los agentes</p>
       <h1>Comportamiento en <span class="resalte">manada</span></h1>
       <p class="bajada">¿Las acciones se mueven juntas cuando el mercado está en extremos?</p>
     </div>
@@ -676,7 +802,7 @@
 <section id="opciones" class="tablero" hidden>
   <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
-      <p class="eyebrow">Módulo 6 · de modelar a decidir</p>
+      <p class="eyebrow">Módulo 7 · de modelar a decidir</p>
       <h1>Opciones <span class="resalte">reales</span></h1>
       <p class="bajada">Cuánto vale la flexibilidad de un proyecto: poder abandonarlo, ampliarlo o reducirlo.</p>
     </div>
@@ -808,25 +934,6 @@
   </div>
 </section>
 
-<section id="comparacion" class="tablero" hidden>
-  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
-    <div class="hero-texto">
-      <p class="eyebrow">contra datos reales</p>
-      <h1>Comparación contra datos <span class="resalte">reales</span></h1>
-      <p class="bajada">Ningún modelo gana siempre; cada uno captura algo distinto.</p>
-    </div>
-  </div>
-  <div class="tarjeta ancho">
-    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
-    <div class="pendiente">
-    <p>Fase 7: una serie real elegible, los cinco modelos calibrados sobre ella, y las
-    métricas que ya dominamos del taller (RMSE rolling, QQ-plot de colas). La
-    conclusión se escribe con nuestras palabras, sin declarar un ganador que los
-    datos no sostengan.</p>
-  </div>
-  </div>
-</section>
-
 </main>
 
 </div>
@@ -838,6 +945,7 @@
 <script src="js/app.js"></script>
 <script src="js/merton.js"></script>
 <script src="js/ou.js"></script>
+<script src="js/vasicek.js"></script>
 <script src="js/fbm.js"></script>
 <script src="js/manada.js"></script>
 <script src="js/opciones.js"></script>

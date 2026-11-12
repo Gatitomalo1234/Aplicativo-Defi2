@@ -39,7 +39,13 @@ const SERIES_MODELO = [
     { ticker: "COP=X", etiqueta: "TRM (peso/dólar) · 3 años", anios: 3,
       porque: "Tipo de cambio, como contraste: vida media ≈\u00a0159 días, una estimación poco precisa." },
   ] },
-  { prefijo: "fbm", nombre: "4 · Browniano fraccional", series: [
+  { prefijo: "vasicek", nombre: "4 · Vasicek (tasas)", series: [
+    { ticker: "^IRX", etiqueta: "Letra del Tesoro 13 semanas · 5 años", anios: 5,
+      porque: "La tasa corta de EE. UU.: κ̂ ≈\u00a00.76, θ̂ ≈\u00a04.9\u00a0% y una curva que sube de 4.4\u00a0% a 4.9\u00a0%." },
+    { ticker: "^IRX", etiqueta: "Letra del Tesoro 13 semanas · 20 años", anios: 20,
+      porque: "Contraste: incluye 2008-2021, con tasas casi en 0. θ̂ ≈\u00a01.2\u00a0% y la curva sale invertida." },
+  ] },
+  { prefijo: "fbm", nombre: "5 · Browniano fraccional", series: [
     { ticker: "NVDA", etiqueta: "NVIDIA · 3 años", anios: 3,
       porque: "Ĥ ≈\u00a00.48: prácticamente sin memoria." },
     { ticker: "^GSPC", etiqueta: "S&P 500 · 10 años", anios: 10,
@@ -49,8 +55,11 @@ const SERIES_MODELO = [
     { ticker: "^VIX", etiqueta: "VIX · 10 años", anios: 10,
       porque: "Nivel antipersistente (Ĥ ≈\u00a00.37), coherente con la reversión que muestra OU." },
   ] },
+  // Manada recibe una canasta (varias acciones): sus opciones vienen de CANASTAS (manada.js)
+  { prefijo: "manada", nombre: "6 · Comportamiento en manada", canastas: true,
+    series: CANASTAS.map((k) => ({ etiqueta: `${k.nombre} (${k.tickers.length})`, porque: k.porque, canasta: k })) },
   // Opciones reales: la serie es una empresa comparable; de ella sale la σ del proyecto
-  { prefijo: "opciones", nombre: "6 · Opciones reales (σ comparable)", series: [
+  { prefijo: "opciones", nombre: "7 · Opciones reales (σ comparable)", series: [
     { ticker: "EC", etiqueta: "Ecopetrol · 5 años", anios: 5,
       porque: "Para un proyecto petrolero en Colombia: σ ≈\u00a038\u00a0%." },
     { ticker: "CIB", etiqueta: "Bancolombia · 5 años", anios: 5,
@@ -60,9 +69,6 @@ const SERIES_MODELO = [
     { ticker: "GLD", etiqueta: "Oro (GLD) · 5 años", anios: 5,
       porque: "Para un proyecto minero de oro: σ ≈\u00a019\u00a0%." },
   ] },
-  // Manada recibe una canasta (varias acciones): sus opciones vienen de CANASTAS (manada.js)
-  { prefijo: "manada", nombre: "5 · Comportamiento en manada", canastas: true,
-    series: CANASTAS.map((k) => ({ etiqueta: `${k.nombre} (${k.tickers.length})`, porque: k.porque, canasta: k })) },
 ];
 const OTRO = "otro"; // última opción del menú: cualquier ticker, en «Bajar una serie»
 const opcionModelo = {}; // prefijo -> opción elegida en su menú (se conserva al redibujar)
@@ -180,27 +186,28 @@ function dibujarVista() {
 }
 
 function pintarBotonesUsar() {
-  // OU está pensado para niveles: si la serie es (o puede ser) un precio, su botón se
-  // marca y debajo aparece la recomendación con las series sugeridas para OU
-  const aviso = serieEnVista ? avisoOU(serieEnVista) : null;
+  // OU está pensado para niveles y Vasicek para tasas: si la serie no encaja, su botón se
+  // marca y debajo aparece la recomendación con las series sugeridas para ese modelo
+  const avisos = serieEnVista ? { ou: avisoOU(serieEnVista), vasicek: avisoVasicek(serieEnVista) } : {};
   $("datos-usar").innerHTML = Object.entries(NOMBRES_MODULO).map(([p, nombre]) => {
     const enUso = SERIES_EN_USO[p] && serieEnVista && SERIES_EN_USO[p].archivo === serieEnVista.archivo;
-    const marcado = p === "ou" && aviso;
+    const marcado = !!avisos[p];
     const titulo = enUso ? `Clic para que ${nombre} deje de usar esta serie`
-      : marcado ? "Se puede usar, pero OU está pensado para niveles (ver la recomendación abajo)"
+      : marcado ? `Se puede usar, pero ${nombre} está pensado para otro tipo de serie (ver la recomendación abajo)`
       : `Usar esta serie en ${nombre}`;
     return `<button type="button" class="boton${enUso ? " en-uso" : ""}${marcado ? " con-aviso" : ""}" data-usar="${p}"
       title="${titulo}">${enUso ? "✓ " : marcado ? "⚠ " : ""}${nombre}</button>`;
   }).join("");
 
   const caja = $("datos-usar-aviso");
-  caja.hidden = !aviso;
-  if (aviso) {
-    const ou = SERIES_MODELO.find((m) => m.prefijo === "ou");
-    caja.innerHTML = `<p><b>Para OU:</b> ${aviso.replace(/^Ojo: /, "")}</p>
-      <p class="recomendadas"><span>Recomendadas para OU:</span>${ou.series.map((s, i) =>
-        `<button type="button" class="chip-rec" data-rec="${i}">${s.etiqueta}</button>`).join("")}</p>`;
-  }
+  const marcados = Object.entries(avisos).filter(([, a]) => a);
+  caja.hidden = !marcados.length;
+  caja.innerHTML = marcados.map(([p, aviso]) => {
+    const m = SERIES_MODELO.find((x) => x.prefijo === p);
+    return `<p><b>Para ${NOMBRES_MODULO[p]}:</b> ${aviso.replace(/^Ojo: /, "")}</p>
+      <p class="recomendadas"><span>Recomendadas para ${NOMBRES_MODULO[p]}:</span>${m.series.map((s, i) =>
+        `<button type="button" class="chip-rec" data-rec-modelo="${p}" data-rec="${i}">${s.etiqueta}</button>`).join("")}</p>`;
+  }).join("");
 }
 
 // manda la serie de la vista (o una recién bajada) a un módulo; devuelve si funcionó
@@ -208,7 +215,7 @@ function asignar(prefijo, datos) {
   let ok = true;
   try {
     usarSerieEn(prefijo, datos);
-    const aviso = prefijo === "ou" ? avisoOU(datos) : null;
+    const aviso = prefijo === "ou" ? avisoOU(datos) : prefijo === "vasicek" ? avisoVasicek(datos) : null;
     estadoDatos(`${datos.ticker} quedó en uso en ${NOMBRES_MODULO[prefijo] || NOMBRE_MANADA}.${aviso ? " " + aviso : ""}`, aviso ? "aviso" : "");
   } catch (e) {
     estadoDatos(e.message, "error");
@@ -412,14 +419,14 @@ MODULOS.datos = {
       if (b) quitar(b.dataset.soltar);
     });
 
-    // recomendación bajo «Usar en»: baja la serie sugerida y la deja en uso en OU
+    // recomendación bajo «Usar en»: baja la serie sugerida y la deja en uso en ese modelo
     $("datos-usar-aviso").addEventListener("click", (ev) => {
       const b = ev.target.closest("[data-rec]");
       if (!b) return;
-      const ou = SERIES_MODELO.find((m) => m.prefijo === "ou");
-      const s = ou.series[+b.dataset.rec];
-      opcionModelo.ou = b.dataset.rec; // el menú de OU queda en esa opción
-      ocupado(() => bajar(s.ticker, s.desde || haceAnios(s.anios), s.hasta || fechaISO(new Date()), "ou"));
+      const p = b.dataset.recModelo;
+      const s = SERIES_MODELO.find((m) => m.prefijo === p).series[+b.dataset.rec];
+      opcionModelo[p] = b.dataset.rec; // el menú de ese modelo queda en esa opción
+      ocupado(() => bajar(s.ticker, s.desde || haceAnios(s.anios), s.hasta || fechaISO(new Date()), p));
     });
 
     $("datos-csv-bajar").addEventListener("click", () => {

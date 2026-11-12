@@ -21,17 +21,24 @@ la teoría se entiende, el foco es la **interpretación económica y de mercado*
 
 ## Modelos vistos en clase
 
-GBM → saltos de Merton → Ornstein-Uhlenbeck → browniano fraccional → comportamiento
+GBM → saltos de Merton → Ornstein-Uhlenbeck → Vasicek (ningún compañero lo presentó; se
+basa en la renta fija de las diapositivas y en Hull) → browniano fraccional → comportamiento
 en manada (los compañeros presentaron CSAD, CSSD y LSV; usaron CSAD) → opciones reales (presentación
 de Julián Duarte y Felipe Pulido: árbol binomial CRR, caso de abandono de Venegas págs. 811–813).
 Machine learning: fuera del aplicativo por ahora.
 
 ## Documentos del profe (carpeta `contexto/`)
 
-- `StochasticCalculus.pdf` (diapositivas): binomial, CRR, random walks, browniano, Itô,
+- `StochasticCalculus.pdf` (diapositivas, ya en `contexto/`): binomial, CRR, random walks, browniano, Itô,
   GBM, Black-Scholes, renta fija. GBM simulado con **Euler-Maruyama** (diap. 86).
   OU aparece en el ejercicio de liquidez y en dh = γ(α − h)dt + ω dW (diap. 134).
-  No trae Merton, browniano fraccional ni manada. *Copiar el PDF a `contexto/` a mano.*
+  No trae Merton, browniano fraccional ni manada. Copiado a `contexto/` el 11 nov (138 diap.).
+  Renta fija en diap. 117–123: bono cero cupón B(t,T) = exp(−r(T−t)) (ec. 68), B(T,T) = 1,
+  martingala bajo Q y ejemplo de arbitraje con bono a 2 años. La ec. 76 de reversión a la media
+  (diap. 134) es de tasa de riesgo en educación superior, no de tasas de interés; la equivalencia
+  γ = κ, α = θ, ω = σ que dice el módulo OU quedó verificada. No nombra a Vasicek.
+- Hull, *Options, Futures and Other Derivatives* 8ª ed. (en Descargas del computador de Nicolás):
+  Vasicek en cap. 30, págs. 684–685, ec. 30.6–30.8: P(t,T) = A(t,T)e^(−B(t,T) r(t)).
 - `Taller_Valoracion_Plantilla_1.pdf`: taller adicional. Define las **reglas de datos**
   de Yahoo que debemos seguir (abajo) y la calibración. Simula el GBM con **transición
   exacta**: S(t+Δt) = S(t)·exp[(a − σ²/2)Δt + σ√Δt·Z].
@@ -90,6 +97,13 @@ Falta:
 - Divisas cotizan ~260 días/año (COP=X), no 252: se decidió dejarlo así (11 nov).
 - Cierre sin ajustar como S₀: no aplica (en opciones reales S es el valor del proyecto).
 
+Vasicek (11 nov, pendiente de revisión): módulo 4, después de OU (fBm, manada y opciones pasan a
+5, 6 y 7). Misma ecuación de OU para la tasa corta (κ, θ, σ; browniano W para no confundirlo con
+el bono B(t,T)). Bono con fórmula cerrada de Hull (bonoVasicek, ec. 30.6–30.8), verificado: con
+κ = σ = 0 da e^(−rτ) (ec. 68), coincide con el promedio de trayectorias y con el ej. 30.1 de Hull
+(D(4) = 3.29). Curva de tasas R(τ) con su forma explicada. Datos: ^IRX en % → decimal; la
+calibración depende mucho de la ventana (5 años θ̂ ≈ 4.9 %, 20 años θ̂ ≈ 1.2 %). Aviso si la serie
+no es una tasa (avisoVasicek). Comparación (F7) descartada.
 Precarga (11 nov): `datos/descarga_datos.py` baja las 32 series recomendadas (mismas listas que
 SERIES_MODELO y CANASTAS). Sin conexión, el servidor elige la copia guardada que más se cruza con
 el rango pedido y, en empate, la que trae menos fechas de sobra (`_mejor_copia`).
