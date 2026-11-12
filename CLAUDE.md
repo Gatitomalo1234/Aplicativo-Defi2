@@ -110,4 +110,8 @@ Manada y opciones reales se deciden cuando toque esa fase.
 F3 (OU) revisada. F4 (fBm) hecha el 11 nov, pendiente de revisión.
 F5 (manada) y F6 (opciones reales) EN PAUSA: deben basarse en lo que presentaron los
 compañeros del curso; Nicolás trae ese material antes de construirlas.
-Siguiente: rediseño visual (F8) a partir de páginas de ejemplo que trae Nicolás.
+Rediseño visual (F8) hecho el 11 nov, pendiente de revisión: ambiente de la app "Payno"
+(cielo, titulares ligeros) + interfaz de tablero tipo "Spotbank" (tarjetas, pestañas píldora,
+riel de iconos, cifra grande, fichas). Tipografías locales en `fuentes/` (OFL): Geist (interfaz),
+Geist Mono (cifras pequeñas), STIX Two Text (matemáticas y griego; subconjunto a la medida).
+Cada módulo es un `.tablero` con tarjetas marcadas con data-parte para el riel.

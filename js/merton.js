@@ -12,6 +12,7 @@ let mercadoMerton = null; // { datos, cal } cuando hay una serie cargada
 const CONTROLES_MERTON = ["mu", "sigma", "lambda", "muJ", "sigmaJ", "dias", "n"];
 
 function leerControlesMerton() {
+  actualizarRangos(); // relleno de los sliders, también si el valor se fijó desde el código
   const v = (id) => parseFloat($(`merton-${id}`).value);
   const c = {
     mu: v("mu"), sigma: v("sigma"), lambda: v("lambda"), muJ: v("muJ"), sigmaJ: v("sigmaJ"),
@@ -67,30 +68,44 @@ function simularYDibujarMerton() {
       `${formatoPrecio(ancho(sinSaltos))} sin ellos, con las mismas Z.`;
   $("merton-lectura").textContent =
     `${lecturaAbanico(caminos, s0, p.dias, p.n, origen)} ${saltos} ${textoSemilla()}`;
+  pintarFichas("merton", [
+    ...fichasDe(caminos, s0).slice(0, 3),
+    { etiqueta: "con algún salto", valor: `${(conSalto * 100).toFixed(0)} %`, nota: "de los escenarios" },
+  ]);
+  if (!mercadoMerton) {
+    pintarKPI("merton", {
+      titulo: "Precio inicial", nota: "parámetros de ejemplo", valor: formatoPrecio(s0),
+      chips: [["λ", `${p.lambda.toFixed(1)}/año`], ["μ", pct(p.mu)], ["σ", pct(p.sigma)]],
+    });
+  }
 }
 
 function mostrarCalibracionMerton() {
   const { datos, cal } = mercadoMerton;
   const r = (x) => pct(x);
   const sinSaltos = cal.saltos.length === 0;
-  $("merton-calibracion").innerHTML = `
-    ${encabezadoDatos(datos)}
-    <ul>
-      <li>n = ${cal.nRetornos} log-retornos diarios (${cal.anios.toFixed(2)} años) ·
-          media x̄ = ${cal.media.toFixed(5)} · desviación s = ${cal.s.toFixed(5)}</li>
-      <li>umbral: un día es salto si |r − x̄| &gt; c · s = ${cal.c.toFixed(1)} · ${cal.s.toFixed(5)}
-          = ${r(cal.corte)}</li>
-      <li>saltos detectados: ${cal.saltos.length} → λ̂ = ${cal.saltos.length} / ${cal.anios.toFixed(2)}
-          = ${cal.lambda.toFixed(2)} saltos por año</li>
-      ${sinSaltos
-        ? "<li>Sin saltos con este umbral: λ̂ = 0 y el modelo es el GBM.</li>"
-        : `<li>tamaño del salto (log): μ̂J = media = ${r(cal.muJ)} · σ̂J = desviación = ${r(cal.sigmaJ)}</li>`}
-      <li>σ̂ difusiva = desviación de los ${cal.nRetornos - cal.saltos.length} días sin salto · √252
-          = ${r(cal.sigma)} &nbsp;(el GBM, que mezcla todo, ve σ = ${r(cal.sigmaTotal)})</li>
-      <li>k̂ = e^(μ̂J + σ̂J²/2) − 1 = ${r(cal.k)} &nbsp;·&nbsp;
-          μ̂ = 252 · x̄ + σ̂²/2 + λ̂ · (k̂ − μ̂J) = ${r(cal.mu)}</li>
-      <li>S₀ = último cierre = ${cal.s0.toFixed(2)}</li>
-    </ul>`;
+  const filas = [
+    [`n log-retornos diarios (${cal.anios.toFixed(2)} años)`, cal.nRetornos],
+    ["media diaria x̄ · desviación diaria s", `${cal.media.toFixed(5)} · ${cal.s.toFixed(5)}`],
+    [`umbral: día de salto si |r − x̄| &gt; c · s = ${cal.c.toFixed(1)} · ${cal.s.toFixed(5)}`, r(cal.corte)],
+    [`λ̂ = ${cal.saltos.length} saltos / ${cal.anios.toFixed(2)} años`, `${cal.lambda.toFixed(2)} por año`],
+  ];
+  if (sinSaltos) filas.push(["sin saltos con este umbral: el modelo es el GBM", "λ̂ = 0"]);
+  else filas.push(["μ̂<sub>J</sub> = media de los saltos (log)", r(cal.muJ)], ["σ̂<sub>J</sub> = desviación de los saltos", r(cal.sigmaJ)]);
+  filas.push(
+    [`σ̂ difusiva = desviación de los ${cal.nRetornos - cal.saltos.length} días sin salto · √252`, r(cal.sigma)],
+    ["σ que ve el GBM, que mezcla todo = s · √252", r(cal.sigmaTotal)],
+    ["k̂ = e^(μ̂<sub>J</sub> + σ̂<sub>J</sub>²/2) − 1", r(cal.k)],
+    ["μ̂ = 252 · x̄ + σ̂²/2 + λ̂ · (k̂ − μ̂<sub>J</sub>)", r(cal.mu)],
+    ["S₀ = último cierre", cal.s0.toFixed(2)],
+  );
+  $("merton-calibracion").innerHTML = encabezadoDatos(datos) + filasPasos(filas);
+  $("merton-calib-tarjeta").hidden = false;
+  pintarKPI("merton", {
+    titulo: `Último cierre · ${datos.ticker}`, nota: datos.fechas[datos.fechas.length - 1],
+    valor: formatoPrecio(cal.s0),
+    chips: [["λ̂", `${cal.lambda.toFixed(2)}/año`], ["μ̂<sub>J</sub>", r(cal.muJ)], ["σ̂", r(cal.sigma)]],
+  });
   $("merton-calibracion").hidden = false;
 
   // histograma de retornos reales con el umbral

@@ -20,7 +20,34 @@ function mostrarSeccion() {
     a.classList.toggle("activa", a.dataset.seccion === actual);
   });
   if (MODULOS[actual]) MODULOS[actual].dibujar();
+  refrescarRiel();
+  actualizarRangos();
   window.scrollTo(0, 0);
+}
+
+// ---- columna de iconos (riel): salta a una parte del módulo visible ----
+// Las partes se marcan en el HTML con data-parte="ecuacion|datos|calibracion|simulador|explica".
+// No se usan enlaces #, porque el # ya se usa para navegar entre módulos.
+function parteVisible(nombre) {
+  const el = document.getElementById(seccionActual()).querySelector(`[data-parte="${nombre}"]`);
+  return el && !el.hidden ? el : null;
+}
+
+function refrescarRiel() {
+  const seccion = document.getElementById(seccionActual());
+  $("riel").hidden = !seccion.querySelector("[data-parte]");
+  document.querySelectorAll("#riel button").forEach((b) => {
+    b.classList.toggle("inactivo", !parteVisible(b.dataset.parte));
+  });
+}
+
+// Sliders: la parte recorrida del riel se pinta con el acento (variable CSS --pct).
+// Se llama después de cada cambio, también cuando un valor se fija desde el código.
+function actualizarRangos() {
+  document.querySelectorAll('input[type="range"]').forEach((el) => {
+    const min = +el.min || 0, max = +el.max || 100;
+    el.style.setProperty("--pct", `${((+el.value - min) / (max - min || 1)) * 100}%`);
+  });
 }
 
 // ---- piezas comunes ----
@@ -83,6 +110,8 @@ function conectarFormularioDatos(prefijo, alCargar) {
       );
       semillaActual = SEMILLA_BASE;
       alCargar(datos);
+      refrescarRiel();
+      actualizarRangos();
       estado.className = datos.aviso ? "estado aviso" : "estado";
       estado.textContent = datos.aviso
         ? datos.aviso
@@ -109,11 +138,47 @@ function lecturaAbanico(caminos, s0, dias, n, origen) {
   );
 }
 
+// Fichas bajo el gráfico: las cifras clave de la lectura, grandes.
+// items: [{ etiqueta, valor, nota? }]
+function pintarFichas(prefijo, items) {
+  const caja = $(`${prefijo}-fichas`);
+  if (!caja) return;
+  caja.innerHTML = items.map((f) => `
+    <div class="ficha"><span>${f.etiqueta}</span><b>${f.valor}</b>${f.nota ? `<small>${f.nota}</small>` : ""}</div>`).join("");
+}
+
+// fichas comunes de un abanico de precios: p5, mediana, p95 y probabilidad de pérdida
+function fichasDe(caminos, s0, formato = formatoPrecio) {
+  const finales = caminos.map((c) => c[c.length - 1]).sort((a, b) => a - b);
+  const pPerdida = finales.filter((v) => v < s0).length / finales.length;
+  return [
+    { etiqueta: "p5", valor: formato(percentil(finales, 0.05)), nota: "escenario malo" },
+    { etiqueta: "mediana", valor: formato(percentil(finales, 0.5)), nota: "escenario central" },
+    { etiqueta: "p95", valor: formato(percentil(finales, 0.95)), nota: "escenario bueno" },
+    { etiqueta: "termina abajo", valor: `${(pPerdida * 100).toFixed(0)} %`, nota: "del valor inicial" },
+  ];
+}
+const fichasAbanico = (prefijo, caminos, s0) => pintarFichas(prefijo, fichasDe(caminos, s0));
+
+// Tarjeta de cifra grande (como el saldo de una app bancaria).
+// { titulo, valor, nota, chips: [[símbolo, valor]] }
+function pintarKPI(prefijo, k) {
+  $(`${prefijo}-kpi`).innerHTML = `
+    <div class="tarjeta-cabeza"><h2>${k.titulo}</h2><span class="nota-cabeza">${k.nota}</span></div>
+    <p class="kpi-valor">${k.valor}</p>
+    <div class="chips">${k.chips.map(([sim, val]) => {
+      // símbolos (una letra o griego) en cursiva matemática; palabras en letra normal
+      const esSimbolo = /^[A-Za-z]$|[\u0370-\u03FF]/.test(sim.replace(/<[^>]+>/g, "").replace(/\u0302/g, ""));
+      return `<span class="chip">${esSimbolo ? `<i>${sim}</i>` : `<span class="chip-texto">${sim}</span>`}${val}</span>`;
+    }).join("")}</div>`;
+}
+
 // ---- módulo GBM ----
 const EJEMPLO_GBM = { s0: 100, mu: 0.08, sigma: 0.25 };
 let mercadoGBM = null; // { datos, cal } cuando hay una serie cargada
 
 function leerControlesGBM() {
+  actualizarRangos(); // relleno de los sliders, también si el valor se fijó desde el código
   const mu = parseFloat($("gbm-mu").value);
   const sigma = parseFloat($("gbm-sigma").value);
   const dias = parseInt($("gbm-dias").value, 10);
@@ -144,20 +209,38 @@ function simularYDibujarGBM() {
     ? `Partiendo del último cierre de ${mercadoGBM.datos.ticker} (${formatoPrecio(s0)})`
     : `Partiendo de ${s0} (ejemplo)`;
   $("gbm-lectura").textContent = `${lecturaAbanico(caminos, s0, dias, n, origen)} ${textoSemilla()}`;
+  fichasAbanico("gbm", caminos, s0);
+  if (!mercadoGBM) {
+    pintarKPI("gbm", {
+      titulo: "Precio inicial", nota: "parámetros de ejemplo", valor: formatoPrecio(s0),
+      chips: [["μ", pct(mu)], ["σ", pct(sigma)]],
+    });
+  }
 }
 
+// filas de un cálculo paso a paso: [[paso, valor]]
+const filasPasos = (filas) =>
+  `<ol class="pasos">${filas.map(([paso, valor]) => `<li><span>${paso}</span><b>${valor}</b></li>`).join("")}</ol>`;
+
 function mostrarCalibracionGBM({ datos, cal }) {
-  // el cálculo paso a paso, en texto plano, igual que en el taller
+  // el cálculo paso a paso, igual que en el taller
   $("gbm-calibracion").innerHTML = `
+    <div class="tarjeta-cabeza"><h2>Calibración paso a paso</h2><span class="nota-cabeza">método del taller de valoración</span></div>
     ${encabezadoDatos(datos)}
-    <ul>
-      <li>n = ${cal.nRetornos} log-retornos diarios, r = ln(S<sub>t</sub> / S<sub>t−1</sub>)</li>
-      <li>media diaria x̄ = ${cal.media.toFixed(5)} &nbsp;·&nbsp; desviación diaria s = ${cal.s.toFixed(5)}</li>
-      <li>σ̂ = s · √252 = ${pct(cal.sigma)}</li>
-      <li>μ̂ = 252 · x̄ + σ̂²/2 = ${pct(cal.mu)}</li>
-      <li>S₀ = último cierre = ${cal.s0.toFixed(2)}</li>
-    </ul>`;
+    ${filasPasos([
+      ["n log-retornos diarios, r = ln(S<sub>t</sub> / S<sub>t−1</sub>)", cal.nRetornos],
+      ["media diaria x̄", cal.media.toFixed(5)],
+      ["desviación diaria s", cal.s.toFixed(5)],
+      ["σ̂ = s · √252", pct(cal.sigma)],
+      ["μ̂ = 252 · x̄ + σ̂²/2", pct(cal.mu)],
+      ["S₀ = último cierre", cal.s0.toFixed(2)],
+    ])}`;
   $("gbm-calibracion").hidden = false;
+  pintarKPI("gbm", {
+    titulo: `Último cierre · ${datos.ticker}`, nota: datos.fechas[datos.fechas.length - 1],
+    valor: formatoPrecio(cal.s0),
+    chips: [["μ̂", pct(cal.mu)], ["σ̂", pct(cal.sigma)], ["n", cal.nRetornos]],
+  });
 }
 
 function modoSustentacionGBM() {
@@ -198,6 +281,22 @@ MODULOS.gbm = {
 document.addEventListener("DOMContentLoaded", () => {
   for (const m of Object.values(MODULOS)) m.conectar();
   window.addEventListener("hashchange", mostrarSeccion);
+  document.querySelectorAll("#riel button").forEach((b) => {
+    b.addEventListener("click", () => {
+      const el = parteVisible(b.dataset.parte);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  document.addEventListener("input", (ev) => {
+    if (ev.target.matches('input[type="range"]')) actualizarRangos();
+  });
+  // los gráficos (canvas) usan Geist: se redibujan cuando las fuentes terminan de cargar
+  if (document.fonts) {
+    document.fonts.ready.then(() => {
+      const m = MODULOS[seccionActual()];
+      if (m) m.dibujar();
+    });
+  }
   window.addEventListener("resize", () => {
     const m = MODULOS[seccionActual()];
     if (m) m.dibujar();

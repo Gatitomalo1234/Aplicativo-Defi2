@@ -4,189 +4,246 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Romper el mercado perfecto</title>
+<link rel="stylesheet" href="fuentes/fuentes.css">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
-<nav id="navegacion" aria-label="Modelos">
-  <p class="marca">Romper el<br>mercado perfecto</p>
-  <a href="#inicio" data-seccion="inicio">Inicio<span>el mapa de supuestos</span></a>
-  <a href="#gbm" data-seccion="gbm">1 · Browniano geométrico<span>el punto de partida</span></a>
-  <a href="#merton" data-seccion="merton">2 · Saltos de Merton<span>rompe la continuidad</span></a>
-  <a href="#ou" data-seccion="ou">3 · Ornstein-Uhlenbeck<span>rompe el drift constante</span></a>
-  <a href="#fbm" data-seccion="fbm">4 · Browniano fraccional<span>rompe la independencia</span></a>
-  <a href="#manada" data-seccion="manada">5 · Manada<span>rompe a los agentes</span></a>
-  <a href="#opciones" data-seccion="opciones">6 · Opciones reales<span>de modelar a decidir</span></a>
-  <a href="#comparacion" data-seccion="comparacion">Comparación<span>contra datos reales</span></a>
-  <p class="pie">Cálculo Estocástico · Defi 2<br>Universidad Externado · 2026</p>
-</nav>
+<header class="barra">
+  <a class="marca" href="#inicio"><span class="marca-orbe" aria-hidden="true"></span>Romper el mercado perfecto</a>
+  <nav id="navegacion" aria-label="Modelos">
+    <a href="#inicio" data-seccion="inicio">Inicio</a>
+    <a href="#gbm" data-seccion="gbm"><span class="num">1</span>GBM</a>
+    <a href="#merton" data-seccion="merton"><span class="num">2</span>Merton</a>
+    <a href="#ou" data-seccion="ou"><span class="num">3</span>OU</a>
+    <a href="#fbm" data-seccion="fbm"><span class="num">4</span>fBm</a>
+    <a href="#manada" data-seccion="manada"><span class="num">5</span>Manada</a>
+    <a href="#opciones" data-seccion="opciones"><span class="num">6</span>Opciones</a>
+    <a href="#comparacion" data-seccion="comparacion">Comparación</a>
+  </nav>
+</header>
+
+<div class="marco">
+
+<aside class="riel" id="riel" aria-label="Partes del módulo" hidden>
+  <button type="button" data-parte="ecuacion" data-nombre="Ecuación"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h9M5 17h5"/><path d="M15 15l4 4M19 15l-4 4"/></svg><span class="oculto">Ecuación</span></button>
+  <button type="button" data-parte="datos" data-nombre="Datos de mercado"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg><span class="oculto">Datos de mercado</span></button>
+  <button type="button" data-parte="calibracion" data-nombre="Calibración"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="oculto">Calibración</span></button>
+  <button type="button" data-parte="simulador" data-nombre="Simulador"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 5-7 4 4"/><path d="M3 21h18"/></svg><span class="oculto">Simulador</span></button>
+  <button type="button" data-parte="explica" data-nombre="Qué explica y qué no"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5v.01"/></svg><span class="oculto">Qué explica y qué no</span></button>
+</aside>
 
 <main>
 
-<section id="inicio">
-  <h1>Romper el mercado perfecto</h1>
-  <p class="bajada">Cinco modelos estocásticos para leer el mercado, un supuesto a la vez.</p>
+<section id="inicio" class="tablero">
+  <div class="tarjeta hero hero-inicio ancho">
+    <div class="hero-texto">
+      <p class="eyebrow">Cálculo Estocástico · Defi 2 · Universidad Externado</p>
+      <h1>Romper el mercado <span class="resalte">perfecto</span></h1>
+      <p class="bajada">Cinco modelos estocásticos para leer el mercado, un supuesto a la vez.</p>
+    </div>
+    <div class="hero-lado">
+      <div class="orbe" aria-hidden="true"></div>
+      <p class="intro">El movimiento browniano geométrico describe un mercado idealizado: retornos independientes, volatilidad constante, trayectorias continuas, agentes que deciden por su cuenta. Es el punto de partida de todo el curso — y casi ninguno de sus supuestos sobrevive al contacto con los datos. Cada modelo de este aplicativo rompe exactamente <em>uno</em> de esos supuestos y, al romperlo, gana la capacidad de capturar un fenómeno real del mercado.</p>
+    </div>
+  </div>
 
-  <p>El movimiento browniano geométrico describe un mercado idealizado: retornos
-  independientes, volatilidad constante, trayectorias continuas, agentes que deciden
-  por su cuenta. Es el punto de partida de todo el curso — y casi ninguno de sus
-  supuestos sobrevive al contacto con los datos. Cada modelo de este aplicativo rompe
-  exactamente <em>uno</em> de esos supuestos y, al romperlo, gana la capacidad de
-  capturar un fenómeno real del mercado.</p>
-
-  <div class="mapa">
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>El mapa de supuestos</h2><span class="nota-cabeza">cada modelo rompe uno</span></div>
+    <div class="mapa">
     <a class="fila" href="#gbm">
+      <span class="fila-num">1</span>
       <strong>Browniano geométrico</strong>
       <span class="supuesto">el mercado idealizado, completo</span>
       <span class="gana">el benchmark contra el que se mide todo lo demás</span>
     </a>
     <a class="fila" href="#merton">
+      <span class="fila-num">2</span>
       <strong>Saltos de Merton</strong>
       <span class="supuesto"><s>las trayectorias son continuas</s></span>
       <span class="gana">el mercado también salta: noticias, earnings, crashes</span>
     </a>
     <a class="fila" href="#ou">
+      <span class="fila-num">3</span>
       <strong>Ornstein-Uhlenbeck</strong>
       <span class="supuesto"><s>la tendencia es constante</s></span>
       <span class="gana">hay fuerzas que jalan al equilibrio: tasas, spreads</span>
     </a>
     <a class="fila" href="#fbm">
+      <span class="fila-num">4</span>
       <strong>Browniano fraccional</strong>
       <span class="supuesto"><s>los incrementos son independientes</s></span>
       <span class="gana">el mercado tiene memoria: momentum y sobre-reacción</span>
     </a>
     <a class="fila" href="#manada">
+      <span class="fila-num">5</span>
       <strong>Comportamiento en manada</strong>
       <span class="supuesto"><s>los agentes deciden solos</s></span>
       <span class="gana">la imitación crea burbujas y pánicos: GameStop, subprime</span>
     </a>
+    </div>
   </div>
 
-  <p class="nota">Convención del aplicativo: los modelos de precio se simulan con la
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>La convención del aplicativo</h2><span class="nota-cabeza">lo que nos hace defendibles</span></div>
+    <p class="nota">Convención del aplicativo: los modelos de precio se simulan con la
   transición exacta del taller de valoración, S(t+Δt) = S(t)·exp[(μ − σ²/2)Δt + σ√Δt·Z],
   que garantiza precios positivos; Ornstein-Uhlenbeck, que modela un nivel, usa su
   solución en distribución, la del primer taller. Todos con dt = 1/252 y con <em>las mismas</em> normales
   Z bajo semilla fija. Al mover un parámetro, el cambio que se ve en las trayectorias
   es atribuible al parámetro, no al azar.</p>
+  </div>
 </section>
 
-<section id="gbm" hidden>
-  <h1>Browniano geométrico</h1>
-  <p class="bajada">El punto de partida: un mercado sin memoria, sin eventos y sin pánico.</p>
-
-  <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">dS = μ · S · dt &nbsp;+&nbsp; σ · S · dB</p>
-  <p>Para simular se usa la solución exacta (lema de Itô sobre ln S), paso a paso:</p>
-  <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z]</p>
-  <ul class="parametros">
-    <li><b>μ</b> — la tendencia: lo que el activo rinde en promedio por año.</li>
-    <li><b>σ</b> — la volatilidad: cuánto se desvía el retorno diario de esa tendencia.</li>
-    <li><b>Z</b> — una normal estándar nueva cada día, independiente de las anteriores.
-        Aquí viven los tres supuestos que los demás modelos van a romper.</li>
-  </ul>
-
-  <h2>Datos de mercado</h2>
-  <form class="datos-mercado" id="gbm-form">
-    <label>Ticker de Yahoo Finance
-      <input type="text" id="gbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
-    </label>
-    <label>Desde <input type="date" id="gbm-desde"></label>
-    <label>Hasta <input type="date" id="gbm-hasta"></label>
-    <button type="submit" id="gbm-cargar">Cargar y calibrar</button>
-  </form>
-  <p class="estado" id="gbm-estado" role="status">Sin datos cargados: el simulador usa
-  parámetros de ejemplo y arranca en 100.</p>
-  <div class="calibracion" id="gbm-calibracion" hidden></div>
-
-  <h2>Simulador</h2>
-  <div class="simulador">
-    <div class="controles">
-      <label>μ tendencia anual <output id="gbm-mu-out">8.0 %</output>
-        <input type="range" id="gbm-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
-      </label>
-      <label>σ volatilidad anual <output id="gbm-sigma-out">25.0 %</output>
-        <input type="range" id="gbm-sigma" min="0.05" max="1.50" step="0.001" value="0.25">
-      </label>
-      <label>horizonte <output id="gbm-dias-out">252 días</output>
-        <input type="range" id="gbm-dias" min="21" max="504" step="21" value="252">
-      </label>
-      <label>trayectorias <output id="gbm-n-out">200</output>
-        <input type="range" id="gbm-n" min="20" max="400" step="20" value="200">
-      </label>
-      <button id="gbm-semilla" type="button">Cambiar semilla</button>
-      <button id="gbm-reiniciar" type="button">Modo sustentación</button>
-      <p class="aclaracion">"Modo sustentación" restaura la semilla 2026 y los parámetros
-      calibrados (o los de ejemplo si no hay datos): lo que se ve en clase es
-      reproducible al punto.</p>
+<section id="gbm" class="tablero" hidden>
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 1 · el punto de partida</p>
+      <h1>Browniano <span class="resalte">geométrico</span></h1>
+      <p class="bajada">Un mercado sin memoria, sin eventos y sin pánico.</p>
     </div>
-    <div class="panel-grafico">
-      <canvas id="gbm-canvas"></canvas>
-      <p class="lectura" id="gbm-lectura"></p>
+    <div class="hero-formulas">
+      <p class="etiqueta">La ecuación</p>
+      <p class="ecuacion">dS = μ · S · dt &nbsp;+&nbsp; σ · S · dB</p>
+      <p class="etiqueta">Para simular: la solución exacta (lema de Itô sobre ln S), paso a paso</p>
+      <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z]</p>
     </div>
   </div>
 
-  <h2>Qué explica y qué no</h2>
-  <ul class="honesto">
-    <li>Explica bien: la escala del riesgo (la banda crece como √t) y sirve de base
-        para Black-Scholes. <em>[completar con nuestras palabras]</em></li>
-    <li>No explica: colas gordas, clustering de volatilidad, crashes. Comparar contra
-        los retornos reales en la sección Comparación. <em>[completar]</em></li>
-  </ul>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">μ</span><div><b>La tendencia</b><p>lo que el activo rinde en promedio por año.</p></div></li>
+      <li><span class="simbolo">σ</span><div><b>La volatilidad</b><p>cuánto se desvía el retorno diario de esa tendencia.</p></div></li>
+      <li><span class="simbolo">Z</span><div><b>El ruido</b><p>una normal estándar nueva cada día, independiente de las anteriores.
+        Aquí viven los tres supuestos que los demás modelos van a romper.</p></div></li>
+    </ul>
+  </div>
+
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
+    <form class="datos-mercado" id="gbm-form">
+      <label>Ticker
+        <input type="text" id="gbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Desde <input type="date" id="gbm-desde"></label>
+      <label>Hasta <input type="date" id="gbm-hasta"></label>
+      <button type="submit" id="gbm-cargar">Cargar y calibrar</button>
+    </form>
+    <p class="estado" id="gbm-estado" role="status">Sin datos cargados: el simulador usa
+    parámetros de ejemplo y arranca en 100.</p>
+  </div>
+  <div class="tarjeta col-5 kpi" id="gbm-kpi"></div>
+
+  <div class="tarjeta ancho calibracion" id="gbm-calibracion" data-parte="calibracion" hidden></div>
+
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>Simulador</h2><span class="nota-cabeza">mismas Z · dt = 1/252</span></div>
+    <div class="simulador">
+      <div class="controles">
+        <label>μ tendencia anual <output id="gbm-mu-out">8.0 %</output>
+          <input type="range" id="gbm-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
+        </label>
+        <label>σ volatilidad anual <output id="gbm-sigma-out">25.0 %</output>
+          <input type="range" id="gbm-sigma" min="0.05" max="1.50" step="0.001" value="0.25">
+        </label>
+        <label>horizonte <output id="gbm-dias-out">252 días</output>
+          <input type="range" id="gbm-dias" min="21" max="504" step="21" value="252">
+        </label>
+        <label>trayectorias <output id="gbm-n-out">200</output>
+          <input type="range" id="gbm-n" min="20" max="400" step="20" value="200">
+        </label>
+        <div class="botones">
+          <button id="gbm-semilla" type="button">Cambiar semilla</button>
+          <button id="gbm-reiniciar" type="button">Modo sustentación</button>
+        </div>
+        <p class="aclaracion">"Modo sustentación" restaura la semilla 2026 y los parámetros
+        calibrados (o los de ejemplo si no hay datos): lo que se ve en clase es
+        reproducible al punto.</p>
+      </div>
+      <div class="panel-grafico">
+        <canvas id="gbm-canvas"></canvas>
+        <div class="fichas" id="gbm-fichas"></div>
+        <p class="lectura" id="gbm-lectura"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <p>La escala del riesgo (la banda crece como √t) y sirve de base para Black-Scholes.
+    <em>[completar con nuestras palabras]</em></p>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <p>Colas gordas, clustering de volatilidad, crashes. Comparar contra los retornos
+    reales en la sección Comparación. <em>[completar]</em></p>
+  </div>
 </section>
 
-<section id="merton" hidden>
-  <h1>Saltos de Merton</h1>
-  <p class="bajada">Rompe la continuidad: el mercado también se mueve a saltos.</p>
-
-  <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">dS / S = (μ − λk) · dt &nbsp;+&nbsp; σ · dB &nbsp;+&nbsp; dJ</p>
-  <p>Para simular, cada día, con las mismas Z del GBM:</p>
-  <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − λk − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z &nbsp;+&nbsp; Y]</p>
-  <ul class="parametros">
-    <li><b>λ</b> — intensidad: cuántos saltos hay en promedio por año. Cada día hay un
-        salto con probabilidad λ·Δt. Con λ = 0 el modelo es el GBM.</li>
-    <li><b>Y</b> — el tamaño del salto, en logaritmo: Y ~ N(μ<sub>J</sub>, σ<sub>J</sub>²) los días
-        con salto, Y = 0 los demás.</li>
-    <li><b>μ<sub>J</sub>, σ<sub>J</sub></b> — tamaño promedio del salto y qué tan variable es.</li>
-    <li><b>σ</b> — ahora solo mide el ruido de los días normales (riesgo difusivo).</li>
-    <li><b>k = e<sup>μJ + σJ²/2</sup> − 1</b> — el salto promedio en precio. Restar λk
-        compensa los saltos: μ sigue siendo el retorno esperado total.</li>
-  </ul>
-
-  <h2>Datos de mercado</h2>
-  <form class="datos-mercado" id="merton-form">
-    <label>Ticker de Yahoo Finance
+<section id="merton" class="tablero" hidden>
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 2 · rompe la continuidad</p>
+      <h1>Saltos de <span class="resalte">Merton</span></h1>
+      <p class="bajada">El mercado también se mueve a saltos.</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">La ecuación</p>
+      <p class="ecuacion">dS / S = (μ − λk) · dt &nbsp;+&nbsp; σ · dB &nbsp;+&nbsp; dJ</p>
+      <p class="etiqueta">Para simular, cada día, con las mismas Z del GBM</p>
+      <p class="ecuacion">S(t+Δt) = S(t) · exp[(μ − λk − σ²/2)·Δt &nbsp;+&nbsp; σ·√Δt·Z &nbsp;+&nbsp; Y]</p>
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">λ</span><div><p>Intensidad: cuántos saltos hay en promedio por año. Cada día hay un salto con probabilidad λ·Δt. Con λ = 0 el modelo es el GBM.</p></div></li>
+      <li><span class="simbolo">Y</span><div><p>El tamaño del salto, en logaritmo: Y ~ N(μ<sub>J</sub>, σ<sub>J</sub>²) los días con salto, Y = 0 los demás.</p></div></li>
+      <li><span class="simbolo">μ<sub>J</sub>, σ<sub>J</sub></span><div><p>Tamaño promedio del salto y qué tan variable es.</p></div></li>
+      <li><span class="simbolo">σ</span><div><p>Ahora solo mide el ruido de los días normales (riesgo difusivo).</p></div></li>
+      <li><span class="simbolo">k</span><div><p><span class="mate-linea">k = e<sup>μJ + σJ²/2</sup> − 1</span> El salto promedio en precio. Restar λk compensa los saltos: μ sigue siendo el retorno esperado total.</p></div></li>
+    </ul>
+  </div>
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
+    <form class="datos-mercado" id="merton-form">
+    <label>Ticker
       <input type="text" id="merton-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
     </label>
     <label>Desde <input type="date" id="merton-desde"></label>
     <label>Hasta <input type="date" id="merton-hasta"></label>
     <button type="submit" id="merton-cargar">Cargar y calibrar</button>
   </form>
-  <p class="estado" id="merton-estado" role="status">Sin datos cargados: el simulador usa
+    <p class="estado" id="merton-estado" role="status">Sin datos cargados: el simulador usa
   parámetros de ejemplo, arranca en 100 y con λ = 0 (sin saltos).</p>
-
-  <div class="umbral" id="merton-umbral-caja" hidden>
-    <label>Umbral para contar un día como salto: |r − x̄| &gt; c · s, con c =
-      <output id="merton-umbral-out">3.0 s</output>
-      <input type="range" id="merton-umbral" min="2" max="6" step="0.1" value="3">
-    </label>
-    <p class="aclaracion">Umbral bajo: más días cuentan como salto (λ̂ sube, σ̂ difusiva
-    baja). Umbral alto: solo los movimientos extremos. Limitación del método: los saltos
-    más pequeños que el umbral no se detectan, así que λ̂ tiende a quedar corto y μ̂<sub>J</sub>
-    a exagerar el tamaño. Prueba con 30 series simuladas de 40 años (λ = 4, μ<sub>J</sub> = −8 %,
-    c = 3): λ̂ ≈ 2.8 y μ̂<sub>J</sub> ≈ −10 %, mientras que σ̂ y μ̂ salieron sin sesgo.</p>
   </div>
-  <div class="calibracion" id="merton-calibracion" hidden></div>
-  <div class="histograma" id="merton-hist-caja" hidden>
-    <h3>Retornos diarios reales</h3>
-    <canvas id="merton-hist"></canvas>
-    <h3>Días detectados como salto</h3>
-    <div id="merton-saltos"></div>
+  <div class="tarjeta col-5 kpi" id="merton-kpi"></div>
+
+  <div class="tarjeta ancho" id="merton-calib-tarjeta" data-parte="calibracion" hidden>
+    <div class="tarjeta-cabeza"><h2>Calibración paso a paso</h2><span class="nota-cabeza">método del umbral</span></div>
+    <div class="umbral" id="merton-umbral-caja" hidden>
+      <label>Umbral para contar un día como salto: |r − x̄| &gt; c · s, con c =
+        <output id="merton-umbral-out">3.0 s</output>
+        <input type="range" id="merton-umbral" min="2" max="6" step="0.1" value="3">
+      </label>
+      <p class="aclaracion">Umbral bajo: más días cuentan como salto (λ̂ sube, σ̂ difusiva
+      baja). Umbral alto: solo los movimientos extremos. Limitación del método: los saltos
+      más pequeños que el umbral no se detectan, así que λ̂ tiende a quedar corto y μ̂<sub>J</sub>
+      a exagerar el tamaño. Prueba con 30 series simuladas de 40 años (λ = 4, μ<sub>J</sub> = −8 %,
+      c = 3): λ̂ ≈ 2.8 y μ̂<sub>J</sub> ≈ −10 %, mientras que σ̂ y μ̂ salieron sin sesgo.</p>
+    </div>
+    <div class="calibracion" id="merton-calibracion" hidden></div>
+    <div class="histograma dos-columnas" id="merton-hist-caja" hidden>
+      <div><h3>Retornos diarios reales</h3><canvas id="merton-hist"></canvas></div>
+      <div><h3>Días detectados como salto</h3><div id="merton-saltos"></div></div>
+    </div>
   </div>
 
-  <h2>Simulador</h2>
-  <div class="simulador">
-    <div class="controles">
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>Simulador</h2><span class="nota-cabeza">mismas Z del GBM · saltos con azar propio</span></div>
+    <div class="simulador">
+      <div class="controles">
       <label>μ tendencia anual <output id="merton-mu-out">8.0 %</output>
         <input type="range" id="merton-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
       </label>
@@ -196,10 +253,10 @@
       <label>λ saltos por año <output id="merton-lambda-out">0.0 al año</output>
         <input type="range" id="merton-lambda" min="0" max="30" step="0.1" value="0">
       </label>
-      <label>μ<sub>J</sub> salto promedio <output id="merton-muJ-out">-5.0 %</output>
+      <label><span>μ<sub>J</sub> salto promedio</span> <output id="merton-muJ-out">-5.0 %</output>
         <input type="range" id="merton-muJ" min="-0.40" max="0.40" step="0.005" value="-0.05">
       </label>
-      <label>σ<sub>J</sub> dispersión del salto <output id="merton-sigmaJ-out">8.0 %</output>
+      <label><span>σ<sub>J</sub> dispersión del salto</span> <output id="merton-sigmaJ-out">8.0 %</output>
         <input type="range" id="merton-sigmaJ" min="0" max="0.40" step="0.005" value="0.08">
       </label>
       <label>horizonte <output id="merton-dias-out">252 días</output>
@@ -208,52 +265,64 @@
       <label>trayectorias <output id="merton-n-out">200</output>
         <input type="range" id="merton-n" min="20" max="400" step="20" value="200">
       </label>
-      <button id="merton-sin-saltos" type="button">λ = 0 (GBM)</button>
-      <button id="merton-semilla" type="button">Cambiar semilla</button>
-      <button id="merton-reiniciar" type="button">Modo sustentación</button>
+        <div class="botones">
+        <button id="merton-sin-saltos" type="button">λ = 0 (GBM)</button>
+        <button id="merton-semilla" type="button">Cambiar semilla</button>
+        <button id="merton-reiniciar" type="button">Modo sustentación</button>
+        </div>
       <p class="aclaracion">Los saltos tienen su propio azar, fijo por día: al subir λ
       se conservan los saltos que ya había y solo aparecen nuevos.</p>
-    </div>
-    <div class="panel-grafico">
+      </div>
+      <div class="panel-grafico">
       <canvas id="merton-canvas"></canvas>
+      <div class="fichas" id="merton-fichas"></div>
       <p class="lectura" id="merton-lectura"></p>
+      </div>
     </div>
   </div>
 
-  <h2>Qué explica y qué no</h2>
-  <ul class="honesto">
-    <li>Explica bien: <em>[completar con nuestras palabras: colas gordas, riesgo de evento
-        separado del ruido diario, earnings]</em></li>
-    <li>No explica: <em>[completar: clustering de volatilidad, saltos que no son
-        independientes entre sí, el umbral es una elección nuestra]</em></li>
-  </ul>
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <p><em>[completar con nuestras palabras: colas gordas, riesgo de evento separado del ruido diario, earnings]</em></p>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <p><em>[completar: clustering de volatilidad, saltos que no son independientes entre sí, el umbral es una elección nuestra]</em></p>
+  </div>
 </section>
 
-<section id="ou" hidden>
-  <h1>Ornstein-Uhlenbeck</h1>
-  <p class="bajada">Rompe el drift constante: hay fuerzas que jalan al equilibrio.</p>
-
-  <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">dX(t) = κ (θ − X(t)) dt &nbsp;+&nbsp; σ dB(t)</p>
-  <p>Es la notación del primer taller (ejercicio 3, liquidez de una firma). La ley de X(t)
-  que usamos allá es la misma con la que se simula aquí, día a día:</p>
-  <p class="ecuacion">X(t) ~ N( m(t), v(t) )<br>
+<section id="ou" class="tablero" hidden>
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 3 · rompe el drift constante</p>
+      <h1>Ornstein-<span class="resalte">Uhlenbeck</span></h1>
+      <p class="bajada">Hay fuerzas que jalan al equilibrio.</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">La ecuación (notación del primer taller)</p>
+      <p class="ecuacion">dX(t) = κ (θ − X(t)) dt &nbsp;+&nbsp; σ dB(t)</p>
+      <p class="etiqueta">Es la notación del primer taller (ejercicio 3, liquidez de una firma). La ley de X(t) que usamos allá es la misma con la que se simula aquí, día a día:</p>
+      <p class="ecuacion">X(t) ~ N( m(t), v(t) )<br>
   m(t) = θ + (X(0) − θ)·e<sup>−κt</sup><br>
   v(t) = σ²/(2κ) · (1 − e<sup>−2κt</sup>)</p>
-  <ul class="parametros">
-    <li><b>X</b> — un nivel, no un precio: liquidez, una tasa, el VIX. Puede ser negativo.</li>
-    <li><b>θ</b> — el equilibrio de largo plazo hacia el que vuelve X.</li>
-    <li><b>κ</b> — la velocidad de corrección. Si X está lejos de θ, el término κ(θ − X)
-        lo empuja de vuelta. Con κ = 0 no hay reversión.</li>
-    <li><b>σ</b> — el tamaño del ruido.</li>
-  </ul>
-  <p class="aclaracion">El aplicativo trabaja en años (dt = 1/252); los sliders muestran
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">X</span><div><p>Un nivel, no un precio: liquidez, una tasa, el VIX. Puede ser negativo.</p></div></li>
+      <li><span class="simbolo">θ</span><div><p>El equilibrio de largo plazo hacia el que vuelve X.</p></div></li>
+      <li><span class="simbolo">κ</span><div><p>La velocidad de corrección. Si X está lejos de θ, el término κ(θ − X) lo empuja de vuelta. Con κ = 0 no hay reversión.</p></div></li>
+      <li><span class="simbolo">σ</span><div><p>El tamaño del ruido.</p></div></li>
+    </ul>
+    <p class="aclaracion">El aplicativo trabaja en años (dt = 1/252); los sliders muestran
   también κ y σ por mes, como en el taller. En las diapositivas el mismo modelo aparece
   como dh = γ(α − h)dt + ω dW: γ es κ, α es θ y ω es σ.</p>
-
-  <h2>Datos de mercado</h2>
-  <form class="datos-mercado" id="ou-form">
-    <label>Ticker de Yahoo Finance
+  </div>
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
+    <form class="datos-mercado" id="ou-form">
+    <label>Ticker
       <input type="text" id="ou-ticker" class="ticker" value="^VIX" autocomplete="off" spellcheck="false">
     </label>
     <label>Desde <input type="date" id="ou-desde"></label>
@@ -265,13 +334,17 @@
       <button type="button" id="ou-ejemplo">Ejemplo del taller</button>
     </span>
   </form>
-  <p class="estado" id="ou-estado" role="status">Sin datos cargados: el simulador muestra el
+    <p class="estado" id="ou-estado" role="status">Sin datos cargados: el simulador muestra el
   ejercicio 3 del taller (liquidez en millones de USD).</p>
-  <div class="calibracion" id="ou-calibracion" hidden></div>
+  </div>
+  <div class="tarjeta col-5 kpi" id="ou-kpi"></div>
 
-  <h2>Simulador</h2>
-  <div class="simulador">
-    <div class="controles">
+  <div class="tarjeta ancho calibracion" id="ou-calibracion" data-parte="calibracion" hidden></div>
+
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>Simulador</h2><span class="nota-cabeza">solución en distribución del taller · mismas Z</span></div>
+    <div class="simulador">
+      <div class="controles">
       <label>κ velocidad de corrección <output id="ou-kappa-out"></output>
         <input type="range" id="ou-kappa">
       </label>
@@ -287,75 +360,89 @@
       <label>trayectorias <output id="ou-n-out">200</output>
         <input type="range" id="ou-n" min="20" max="400" step="20" value="200">
       </label>
-      <button id="ou-sin-reversion" type="button">κ = 0 (sin reversión)</button>
-      <button id="ou-semilla" type="button">Cambiar semilla</button>
-      <button id="ou-reiniciar" type="button">Modo sustentación</button>
+        <div class="botones">
+        <button id="ou-sin-reversion" type="button">κ = 0 (sin reversión)</button>
+        <button id="ou-semilla" type="button">Cambiar semilla</button>
+        <button id="ou-reiniciar" type="button">Modo sustentación</button>
+        </div>
       <p class="aclaracion">Con horizonte de 63, 126 y 252 días (3, 6 y 12 meses) la lectura
       responde las preguntas del ejercicio 3: la ley de X(t) y P(X(t) &lt; 0).</p>
-    </div>
-    <div class="panel-grafico">
+      </div>
+      <div class="panel-grafico">
       <canvas id="ou-canvas"></canvas>
+      <div class="fichas" id="ou-fichas"></div>
       <p class="lectura" id="ou-lectura"></p>
+      </div>
     </div>
   </div>
 
-  <h2>Qué explica y qué no</h2>
-  <ul class="honesto">
-    <li>Explica bien: <em>[completar con nuestras palabras: por qué el VIX vuelve a su nivel,
-        qué significa la vida media para alguien que opera volatilidad]</em></li>
-    <li>No explica: <em>[completar: el resultado de la TRM; que X puede volverse negativo
-        (por eso existe el modelo CIR para tasas); θ y κ constantes en el tiempo]</em></li>
-  </ul>
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <p><em>[completar con nuestras palabras: por qué el VIX vuelve a su nivel, qué significa la vida media para alguien que opera volatilidad]</em></p>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <p><em>[completar: el resultado de la TRM; que X puede volverse negativo (por eso existe el modelo CIR para tasas); θ y κ constantes en el tiempo]</em></p>
+  </div>
 </section>
 
-<section id="fbm" hidden>
-  <h1>Browniano fraccional</h1>
-  <p class="bajada">Rompe la independencia de incrementos: el mercado tiene memoria.</p>
-
-  <h2>La ecuación, símbolo a símbolo</h2>
-  <p class="ecuacion">S(t) = S(0) · exp[ μt − (σ²/2)·t<sup>2H</sup> &nbsp;+&nbsp; σ · B<sub>H</sub>(t) ]</p>
-  <ul class="parametros">
-    <li><b>B<sub>H</sub>(t)</b> — browniano fraccional: normal con media 0 y varianza t<sup>2H</sup>.
-        Con H = 0.5 es el browniano B(t) de siempre y el modelo es el GBM.</li>
-    <li><b>H</b> — exponente de Hurst, entre 0 y 1. Mide la memoria: la correlación entre
-        el retorno de un día y el del siguiente es ρ = 2<sup>2H−1</sup> − 1.
-        <br>H &lt; 0.5: ρ &lt; 0, lo que sube tiende a corregirse (sobre-reacción).
-        <br>H = 0.5: ρ = 0, sin memoria.
-        <br>H &gt; 0.5: ρ &gt; 0, lo que sube tiende a seguir subiendo (momentum).</li>
-    <li><b>σ</b> — volatilidad a un año. El término −(σ²/2)t<sup>2H</sup> hace que el precio
-        esperado sea S(0)e<sup>μt</sup> para cualquier H: mover H no cambia la tendencia,
-        solo la forma de las trayectorias.</li>
-  </ul>
-  <p class="aclaracion">Por qué no se escribe como dS = … dB<sub>H</sub>: con H ≠ 0.5 el browniano
+<section id="fbm" class="tablero" hidden>
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 4 · rompe la independencia de incrementos</p>
+      <h1>Browniano <span class="resalte">fraccional</span></h1>
+      <p class="bajada">El mercado tiene memoria.</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">El modelo: se define directamente con la solución</p>
+      <p class="ecuacion">S(t) = S(0) · exp[ μt − (σ²/2)·t<sup>2H</sup> &nbsp;+&nbsp; σ · B<sub>H</sub>(t) ]</p>
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">B<sub>H</sub>(t)</span><div><p>Browniano fraccional: normal con media 0 y varianza t<sup>2H</sup>. Con H = 0.5 es el browniano B(t) de siempre y el modelo es el GBM.</p></div></li>
+      <li><span class="simbolo">H</span><div><p>Exponente de Hurst, entre 0 y 1. Mide la memoria: la correlación entre el retorno de un día y el del siguiente es ρ = 2<sup>2H−1</sup> − 1. <br>H &lt; 0.5: ρ &lt; 0, lo que sube tiende a corregirse (sobre-reacción). <br>H = 0.5: ρ = 0, sin memoria. <br>H &gt; 0.5: ρ &gt; 0, lo que sube tiende a seguir subiendo (momentum).</p></div></li>
+      <li><span class="simbolo">σ</span><div><p>Volatilidad a un año. El término −(σ²/2)t<sup>2H</sup> hace que el precio esperado sea S(0)e<sup>μt</sup> para cualquier H: mover H no cambia la tendencia, solo la forma de las trayectorias.</p></div></li>
+    </ul>
+    <p class="aclaracion">Por qué no se escribe como dS = … dB<sub>H</sub>: con H ≠ 0.5 el browniano
   fraccional no es una semimartingala y el lema de Itô no aplica. Por eso el modelo se
   define directamente con la solución. Cómo se simula: las mismas normales Z se
   correlacionan con la matriz de covarianzas de los incrementos (factorización de Cholesky).</p>
-
-  <h2>Datos de mercado</h2>
-  <form class="datos-mercado" id="fbm-form">
-    <label>Ticker de Yahoo Finance
+  </div>
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
+    <form class="datos-mercado" id="fbm-form">
+    <label>Ticker
       <input type="text" id="fbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
     </label>
     <label>Desde <input type="date" id="fbm-desde"></label>
     <label>Hasta <input type="date" id="fbm-hasta"></label>
     <button type="submit" id="fbm-cargar">Cargar y calibrar</button>
   </form>
-  <p class="estado" id="fbm-estado" role="status">Sin datos cargados: el simulador usa
+    <p class="estado" id="fbm-estado" role="status">Sin datos cargados: el simulador usa
   parámetros de ejemplo, arranca en 100 y con H = 0.5 (sin memoria).</p>
-  <div class="calibracion" id="fbm-calibracion" hidden></div>
-  <div class="histograma" id="fbm-loglog-caja" hidden>
-    <h3>Escalamiento de la volatilidad</h3>
-    <canvas id="fbm-loglog"></canvas>
-    <p class="aclaracion">Si los puntos suben más empinados que la línea punteada, la volatilidad
-    crece más rápido que √k: hay memoria persistente (H &gt; 0.5). Precisión del método: en una
-    prueba con 30 series simuladas de 3 años, Ĥ salió en promedio 0.02 a 0.03 por debajo del
-    H real, con una dispersión de ±0.05. Con 3 años de datos, un Ĥ entre 0.4 y 0.6 no se
-    puede distinguir de 0.5.</p>
+  </div>
+  <div class="tarjeta col-5 kpi" id="fbm-kpi"></div>
+
+  <div class="tarjeta ancho" id="fbm-calib-tarjeta" data-parte="calibracion" hidden>
+    <div class="tarjeta-cabeza"><h2>Exponente de Hurst paso a paso</h2><span class="nota-cabeza">escalamiento de la varianza</span></div>
+    <div class="calibracion" id="fbm-calibracion" hidden></div>
+    <div class="histograma" id="fbm-loglog-caja" hidden>
+      <h3>Escalamiento de la volatilidad</h3>
+      <canvas id="fbm-loglog"></canvas>
+      <p class="aclaracion">Si los puntos suben más empinados que la línea punteada, la volatilidad
+      crece más rápido que √k: hay memoria persistente (H &gt; 0.5). Precisión del método: en una
+      prueba con 30 series simuladas de 3 años, Ĥ salió en promedio 0.02 a 0.03 por debajo del
+      H real, con una dispersión de ±0.05. Con 3 años de datos, un Ĥ entre 0.4 y 0.6 no se
+      puede distinguir de 0.5.</p>
+    </div>
   </div>
 
-  <h2>Simulador</h2>
-  <div class="simulador">
-    <div class="controles">
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>Simulador</h2><span class="nota-cabeza">mismas Z · Cholesky de los incrementos</span></div>
+    <div class="simulador">
+      <div class="controles">
       <label>μ tendencia anual <output id="fbm-mu-out">8.0 %</output>
         <input type="range" id="fbm-mu" min="-0.60" max="1.20" step="0.001" value="0.08">
       </label>
@@ -371,33 +458,45 @@
       <label>trayectorias <output id="fbm-n-out">200</output>
         <input type="range" id="fbm-n" min="20" max="400" step="20" value="200">
       </label>
-      <button id="fbm-sin-memoria" type="button">H = 0.5 (GBM)</button>
-      <button id="fbm-semilla" type="button">Cambiar semilla</button>
-      <button id="fbm-reiniciar" type="button">Modo sustentación</button>
+        <div class="botones">
+        <button id="fbm-sin-memoria" type="button">H = 0.5 (GBM)</button>
+        <button id="fbm-semilla" type="button">Cambiar semilla</button>
+        <button id="fbm-reiniciar" type="button">Modo sustentación</button>
+        </div>
       <p class="aclaracion">Con σ fijo, a un año la distribución teórica del precio es la
       misma para todo H (desviación del log-precio σ·1<sup>H</sup> = σ); a otros horizontes es
       σ·T<sup>H</sup> y las bandas se separan. Lo que cambia es la forma
       de los caminos: con H bajo son más erráticos, con H alto más suaves y tendenciales.</p>
-    </div>
-    <div class="panel-grafico">
+      </div>
+      <div class="panel-grafico">
       <canvas id="fbm-canvas"></canvas>
+      <div class="fichas" id="fbm-fichas"></div>
       <p class="lectura" id="fbm-lectura"></p>
+      </div>
     </div>
   </div>
 
-  <h2>Qué explica y qué no</h2>
-  <ul class="honesto">
-    <li>Explica bien: <em>[completar con nuestras palabras: momentum y sobre-reacción, qué
-        dice el Ĥ de la serie real]</em></li>
-    <li>No explica: <em>[completar: con H ≠ 0.5 no aplica Itô y el modelo permite arbitraje
-        si se usa para valorar; H constante en el tiempo]</em></li>
-  </ul>
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <p><em>[completar con nuestras palabras: momentum y sobre-reacción, qué dice el Ĥ de la serie real]</em></p>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <p><em>[completar: con H ≠ 0.5 no aplica Itô y el modelo permite arbitraje si se usa para valorar; H constante en el tiempo]</em></p>
+  </div>
 </section>
 
-<section id="manada" hidden>
-  <h1>Comportamiento en manada</h1>
-  <p class="bajada">Rompe la independencia de los agentes: los participantes se imitan.</p>
-  <div class="pendiente">
+<section id="manada" class="tablero" hidden>
+  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 5 · rompe la independencia de los agentes</p>
+      <h1>Comportamiento en <span class="resalte">manada</span></h1>
+      <p class="bajada">Los participantes se imitan.</p>
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
+    <div class="pendiente">
     <p>Fase 5. Claves del módulo:</p>
     <ul>
       <li>Modelo de Kirman (1993): N agentes optimistas/pesimistas; ε cambio propio,
@@ -407,12 +506,20 @@
       <li>Subprime 2007-09: la misma lógica contada como imitación institucional.</li>
     </ul>
   </div>
+  </div>
 </section>
 
-<section id="opciones" hidden>
-  <h1>Opciones reales</h1>
-  <p class="bajada">De modelar a decidir: cuánto vale la flexibilidad en un proyecto.</p>
-  <div class="pendiente">
+<section id="opciones" class="tablero" hidden>
+  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">Módulo 6 · de modelar a decidir</p>
+      <h1>Opciones <span class="resalte">reales</span></h1>
+      <p class="bajada">Cuánto vale la flexibilidad en un proyecto.</p>
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
+    <div class="pendiente">
     <p>Fase 6. Este módulo no rompe un supuesto: usa los modelos anteriores para tomar
     una decisión de inversión. Propuesta (por confirmar con lo visto en clase):</p>
     <ul>
@@ -424,20 +531,31 @@
       <li>VPN tradicional frente a VPN expandido = VPN + valor de la flexibilidad.</li>
     </ul>
   </div>
+  </div>
 </section>
 
-<section id="comparacion" hidden>
-  <h1>Comparación contra datos reales</h1>
-  <p class="bajada">Ningún modelo gana siempre; cada uno captura algo distinto.</p>
-  <div class="pendiente">
+<section id="comparacion" class="tablero" hidden>
+  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
+    <div class="hero-texto">
+      <p class="eyebrow">contra datos reales</p>
+      <h1>Comparación contra datos <span class="resalte">reales</span></h1>
+      <p class="bajada">Ningún modelo gana siempre; cada uno captura algo distinto.</p>
+    </div>
+  </div>
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
+    <div class="pendiente">
     <p>Fase 7: una serie real elegible, los cinco modelos calibrados sobre ella, y las
     métricas que ya dominamos del taller (RMSE rolling, QQ-plot de colas). La
     conclusión se escribe con nuestras palabras, sin declarar un ganador que los
     datos no sostengan.</p>
   </div>
+  </div>
 </section>
 
 </main>
+
+</div>
 
 <script src="js/ruido.js"></script>
 <script src="js/modelos.js"></script>

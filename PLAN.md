@@ -49,7 +49,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `servidor.py` — servidor local + endpoint `/api/historico` (Yahoo Finance + caché)
 - `requirements.txt` — yfinance
 - `index.html` — el aplicativo
-- `css/estilos.css` — diseño
+- `css/estilos.css` — diseño (tokens de color, tablero de tarjetas, sliders propios)
+- `fuentes/` — Geist, Geist Mono y STIX Two Text en woff2 + `fuentes.css`
 - `js/ruido.js` — generador con semilla (Mulberry32) + Box-Muller → normales comunes
 - `js/modelos.js` — los 5 simuladores con la interfaz `simular(params, Z)`
 - `js/datos.js` — pide precios al servidor y calibra
@@ -89,7 +90,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
   - opciones de expandir, abandonar y esperar
   - VPN tradicional frente a VPN expandido = VPN + valor de la flexibilidad
 - **F7**: Comparación honesta de los modelos contra datos reales (RMSE rolling, QQ-plot de colas)
-- **F8**: Diseño y pulida visual (después de que todo funcione)
+- **F8 — hecho (11 nov), en revisión**: rediseño completo (ver CLAUDE.md). Fuentes en
+  `fuentes/` sin internet; servidor entrega `/fuentes/`.
 - **F9**: Textos "qué explica / qué no" con nuestras palabras + ensayo de sustentación
 
 ## Decisiones pendientes

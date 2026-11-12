@@ -35,6 +35,7 @@ function fijarParametrosOU(base, minimo = base.x0, maximo = base.x0) {
 }
 
 function leerControlesOU() {
+  actualizarRangos(); // relleno de los sliders, también si el valor se fijó desde el código
   const f = formatoNivelOU();
   const c = {
     kappa: parseFloat($("ou-kappa").value), theta: parseFloat($("ou-theta").value),
@@ -98,24 +99,51 @@ function simularYDibujarOU() {
     `Ley del taller: X(T) ~ N(m, v) con m = ${f(m)} y √v = ${f(sd)}, es decir 90 % entre ` +
     `${f(m - 1.645 * sd)} y ${f(m + 1.645 * sd)}. P(X(T) < 0): teórica ${fmtProb(pNegTeo)}, ` +
     `simulada ${fmtProb(pNegSim)}. ${largoPlazo} ${textoSemilla()}`;
+
+  const vida = p.kappa < 1e-9 ? "∞" : `${((Math.LN2 / p.kappa) * DIAS_HABILES).toFixed(1)} d`;
+  pintarFichas("ou", [
+    ...fichasDe(caminos, x0, f).slice(0, 3),
+    { etiqueta: "vida media", valor: vida, nota: p.kappa < 1e-9 ? "sin reversión" : "días hábiles" },
+  ]);
+  if (!mercadoOU) {
+    pintarKPI("ou", {
+      titulo: "Liquidez inicial X(0)", nota: "ejercicio 3 del taller", valor: f(x0),
+      chips: [["κ", `${(p.kappa / 12).toFixed(2)}/mes`], ["θ", f(p.theta)], ["σ", `${f(p.sigma / Math.sqrt(12))}/√mes`]],
+    });
+  }
 }
 
 function mostrarCalibracionOU() {
   const { datos, cal } = mercadoOU;
   const f = formatoNivelOU();
+  const filas = [
+    ["pares de días consecutivos (X(t), X(t+Δt))", cal.n],
+    ["regresión X(t+Δt) = a + b·X(t) + ε: intercepto â", cal.a.toPrecision(4)],
+    ["pendiente b̂", cal.b.toFixed(4)],
+    ["desviación de los residuos s<sub>ε</sub>", cal.sEps.toPrecision(4)],
+  ];
+  if (cal.reversion) {
+    filas.push(
+      ["κ̂ = −ln(b̂)/Δt", `${cal.kappa.toFixed(2)}/año (${(cal.kappa / 12).toFixed(3)}/mes)`],
+      ["vida media = ln 2/κ̂", `${cal.vidaMediaDias.toFixed(1)} días hábiles`],
+      ["θ̂ = â/(1 − b̂)", f(cal.theta)],
+      ["σ̂ = s<sub>ε</sub>·√(2κ̂/(1 − b̂²))", f(cal.sigma)],
+    );
+  } else {
+    filas.push(
+      ["b̂ ≥ 1: no hay reversión que estimar (browniano sin deriva)", "κ = 0"],
+      ["σ̂ = s<sub>ε</sub>/√Δt", f(cal.sigma)],
+    );
+  }
+  filas.push(["X(0) = último dato", f(cal.x0)], ["rango de la serie", `${f(cal.minimo)} a ${f(cal.maximo)}`]);
   $("ou-calibracion").innerHTML = `
-    ${encabezadoDatos(datos)}
-    <ul>
-      <li>regresión X(t+Δt) = a + b·X(t) + ε con ${cal.n} pares de días consecutivos:
-          â = ${cal.a.toPrecision(4)} · b̂ = ${cal.b.toFixed(4)} · s<sub>ε</sub> = ${cal.sEps.toPrecision(4)}</li>
-      ${cal.reversion ? `
-      <li>κ̂ = −ln(b̂)/Δt = ${cal.kappa.toFixed(2)} por año (${(cal.kappa / 12).toFixed(3)} por mes)
-          · vida media = ln 2/κ̂ = ${cal.vidaMediaDias.toFixed(1)} días hábiles</li>
-      <li>θ̂ = â/(1 − b̂) = ${f(cal.theta)} &nbsp;·&nbsp; σ̂ = s<sub>ε</sub>·√(2κ̂/(1 − b̂²)) = ${f(cal.sigma)}</li>`
-      : `<li>b̂ ≥ 1: no hay reversión que estimar; κ queda en 0 (browniano sin deriva)
-           y σ̂ = s<sub>ε</sub>/√Δt = ${f(cal.sigma)}</li>`}
-      <li>X(0) = último dato = ${f(cal.x0)} · rango de la serie: ${f(cal.minimo)} a ${f(cal.maximo)}</li>
-    </ul>`;
+    <div class="tarjeta-cabeza"><h2>Calibración paso a paso</h2><span class="nota-cabeza">regresión AR(1) con b = e<sup>−κΔt</sup></span></div>
+    ${encabezadoDatos(datos)}${filasPasos(filas)}`;
+  pintarKPI("ou", {
+    titulo: `Último dato · ${datos.ticker}`, nota: datos.fechas[datos.fechas.length - 1], valor: f(cal.x0),
+    chips: [["κ̂", `${cal.kappa.toFixed(2)}/año`], ["θ̂", f(cal.theta)],
+            ["vida media", cal.reversion ? `${cal.vidaMediaDias.toFixed(1)} d` : "∞"]],
+  });
   $("ou-calibracion").hidden = false;
 }
 

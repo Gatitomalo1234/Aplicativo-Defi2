@@ -132,10 +132,12 @@ def historico(ticker, desde, hasta):
 
 
 PUBLICOS = ("/", "/index.html", "/favicon.ico")
-CARPETAS_PUBLICAS = ("/css/", "/js/", "/contexto/")
+CARPETAS_PUBLICAS = ("/css/", "/js/", "/contexto/", "/fuentes/")
 
 
 class Manejador(SimpleHTTPRequestHandler):
+    extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".woff2": "font/woff2"}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=RAIZ, **kwargs)
 

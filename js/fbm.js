@@ -12,6 +12,7 @@ let mercadoFBM = null; // { datos, cal } cuando hay una serie cargada
 const rhoUno = (H) => Math.pow(2, 2 * H - 1) - 1;
 
 function leerControlesFBM() {
+  actualizarRangos(); // relleno de los sliders, también si el valor se fijó desde el código
   const c = {
     mu: parseFloat($("fbm-mu").value), sigma: parseFloat($("fbm-sigma").value),
     H: parseFloat($("fbm-H").value),
@@ -61,34 +62,53 @@ function simularYDibujarFBM() {
     : `Partiendo de ${s0} (ejemplo)`;
   $("fbm-lectura").textContent =
     `${lecturaAbanico(caminos, s0, p.dias, p.n, origen)} ${memoria} ${textoSemilla()}`;
+  pintarFichas("fbm", [
+    ...fichasDe(caminos, s0).slice(0, 3),
+    { etiqueta: "memoria ρ", valor: rho.toFixed(2), nota: rho > 0.005 ? "momentum" : rho < -0.005 ? "sobre-reacción" : "sin memoria" },
+  ]);
+  if (!mercadoFBM) {
+    pintarKPI("fbm", {
+      titulo: "Precio inicial", nota: "parámetros de ejemplo", valor: formatoPrecio(s0),
+      chips: [["H", p.H.toFixed(2)], ["μ", pct(p.mu)], ["σ", pct(p.sigma)]],
+    });
+  }
 }
 
 function mostrarCalibracionFBM() {
   const { datos, cal } = mercadoFBM;
-  const filas = cal.puntos.map((q) =>
+  const tabla = cal.puntos.map((q) =>
     `<tr><td>${q.k}</td><td>${q.bloques}</td><td>${pct(q.sd)}</td></tr>`).join("");
+  const kMax = cal.puntos[cal.puntos.length - 1].k;
   $("fbm-calibracion").innerHTML = `
     ${encabezadoDatos(datos)}
-    <ul>
-      <li>n = ${cal.nRetornos} log-retornos diarios. Se suman en bloques de k días sin
-          traslape y se mide la desviación de esas sumas (sd<sub>k</sub>):</li>
-    </ul>
-    <table class="tabla-hurst">
-      <thead><tr><th>k días</th><th>bloques</th><th>sd<sub>k</sub></th></tr></thead>
-      <tbody>${filas}</tbody>
-    </table>
-    <ul>
-      <li>regresión ln sd<sub>k</sub> = ln c + H · ln k → <b>Ĥ = ${cal.H.toFixed(3)}</b>
-          (pendiente), c = ${cal.c.toFixed(5)}, R² = ${cal.r2.toFixed(3)}</li>
-      <li>memoria: ρ = 2^(2Ĥ−1) − 1 = ${rhoUno(cal.H).toFixed(3)} entre un día y el siguiente</li>
-      <li>σ̂ = c · 252^Ĥ = ${pct(cal.sigma)} (volatilidad a un año según la recta, extrapolada:
-          los bloques llegan hasta ${cal.puntos[cal.puntos.length - 1].k} días; el GBM, que supone
-          H = 0.5, usa s·√252 = ${pct(cal.sigmaGBM)})</li>
-      <li>μ̂ = 252 · x̄ + σ̂²/2 = ${pct(cal.mu)} &nbsp;·&nbsp; S₀ = último cierre = ${cal.s0.toFixed(2)}</li>
-    </ul>`;
+    <div class="hurst">
+      <div>
+        <p class="etiqueta">Se suman los ${cal.nRetornos} log-retornos en bloques de k días sin traslape
+        y se mide la desviación de esas sumas (sd<sub>k</sub>):</p>
+        <table class="tabla-hurst">
+          <thead><tr><th>k días</th><th>bloques</th><th>sd<sub>k</sub></th></tr></thead>
+          <tbody>${tabla}</tbody>
+        </table>
+      </div>
+      ${filasPasos([
+        ["regresión ln sd<sub>k</sub> = ln c + H · ln k: pendiente Ĥ", cal.H.toFixed(3)],
+        ["intercepto c · ajuste R²", `${cal.c.toFixed(5)} · ${cal.r2.toFixed(3)}`],
+        ["memoria ρ = 2^(2Ĥ−1) − 1, entre un día y el siguiente", rhoUno(cal.H).toFixed(3)],
+        [`σ̂ = c · 252^Ĥ (a un año, extrapolada: bloques hasta ${kMax} días)`, pct(cal.sigma)],
+        ["σ que usa el GBM, que supone H = 0.5 = s · √252", pct(cal.sigmaGBM)],
+        ["μ̂ = 252 · x̄ + σ̂²/2", pct(cal.mu)],
+        ["S₀ = último cierre", cal.s0.toFixed(2)],
+      ])}
+    </div>`;
   $("fbm-calibracion").hidden = false;
+  $("fbm-calib-tarjeta").hidden = false;
   $("fbm-loglog-caja").hidden = false;
   dibujarLogLog($("fbm-loglog"), cal.puntos, { H: cal.H, c: cal.c });
+  pintarKPI("fbm", {
+    titulo: `Exponente de Hurst · ${datos.ticker}`, nota: "Ĥ por escalamiento de la varianza",
+    valor: cal.H.toFixed(2),
+    chips: [["ρ", rhoUno(cal.H).toFixed(3)], ["σ̂", pct(cal.sigma)], ["μ̂", pct(cal.mu)]],
+  });
 }
 
 function modoSustentacionFBM() {

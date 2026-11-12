@@ -4,16 +4,20 @@
 // Hover: en el tramo histórico muestra el precio real; en el simulado, p5 / mediana / p95.
 
 const ESTILO_GRAFICO = {
-  camino: "rgba(31, 110, 104, 0.16)",
-  banda: "rgba(31, 110, 104, 0.10)",
-  mediana: "#1F6E68",
-  historico: "#232A2E",
-  eje: "#8A949A",
-  rejilla: "#E3E6E1",
-  texto: "#5C676D",
-  referencia: "#B5552B", // banda de comparación (GBM) y días de salto
-  marca: "#B5552B",
-  equilibrio: "#232A2E", // θ en OU (punteado fino)
+  // misma paleta que css/estilos.css: azul para lo simulado, marino para lo real,
+  // coral para referencias (banda de comparación) y eventos (días de salto)
+  camino: "rgba(61, 111, 230, 0.15)",
+  banda: "rgba(61, 111, 230, 0.11)",
+  mediana: "#3D6FE6",
+  historico: "#1D2D50",
+  eje: "#9AA8BC",
+  rejilla: "#E7EDF5",
+  texto: "#6B7A91",
+  referencia: "#D9644A",
+  marca: "#D9644A",
+  equilibrio: "#1D2D50", // θ en OU (punteado fino)
+  fuente: "11.5px Geist, 'STIX Two Text', -apple-system, sans-serif",
+  fuenteCifras: "11px 'Geist Mono', ui-monospace, Menlo, monospace",
   maxCaminosVisibles: 60,
 };
 
@@ -96,7 +100,7 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
   const py = (v) => margen.arr + (1 - (v - yMin) / (yMax - yMin)) * H;
 
   ctx.clearRect(0, 0, ancho, alto);
-  ctx.font = "11px -apple-system, 'Segoe UI', sans-serif";
+  ctx.font = ESTILO_GRAFICO.fuente;
 
   // rejilla + eje y
   ctx.lineWidth = 1;
@@ -106,7 +110,9 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
     ctx.beginPath(); ctx.moveTo(margen.izq, py(v)); ctx.lineTo(ancho - margen.der, py(v)); ctx.stroke();
     ctx.fillStyle = ESTILO_GRAFICO.texto;
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.font = ESTILO_GRAFICO.fuenteCifras;
     ctx.fillText(o.formato(v), margen.izq - 6, py(v));
+    ctx.font = ESTILO_GRAFICO.fuente;
   }
 
   // eje x
@@ -247,8 +253,7 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
     const tx = Math.max(4, Math.min(px(k) - anchoTexto / 2, ancho - 4 - anchoTexto));
     ctx.fillStyle = "#FFFFFF";
     ctx.strokeStyle = ESTILO_GRAFICO.rejilla;
-    ctx.fillRect(tx, margen.arr + 2, anchoTexto, 20);
-    ctx.strokeRect(tx, margen.arr + 2, anchoTexto, 20);
+    ctx.beginPath(); ctx.roundRect(tx, margen.arr + 1, anchoTexto, 22, 8); ctx.fill(); ctx.stroke();
     ctx.fillStyle = ESTILO_GRAFICO.historico;
     ctx.fillText(texto, tx + 6, margen.arr + 12);
   }
@@ -282,7 +287,7 @@ function dibujarHistograma(canvas, retornos, opciones = {}) {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, ancho, alto);
-  ctx.font = "11px -apple-system, 'Segoe UI', sans-serif";
+  ctx.font = ESTILO_GRAFICO.fuente;
 
   const margen = { izq: 14, der: 14, arr: 24, aba: 26 };
   const W = ancho - margen.izq - margen.der;
@@ -346,7 +351,7 @@ function dibujarLogLog(canvas, puntos, ajuste) {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, ancho, alto);
-  ctx.font = "11px -apple-system, 'Segoe UI', sans-serif";
+  ctx.font = ESTILO_GRAFICO.fuente;
 
   const margen = { izq: 58, der: 14, arr: 26, aba: 34 };
   const W = ancho - margen.izq - margen.der;
