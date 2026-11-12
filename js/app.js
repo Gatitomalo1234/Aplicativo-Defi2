@@ -374,10 +374,70 @@ MODULOS.gbm = {
   },
 };
 
+// ---- entrada al aplicativo (solo al abrir en Inicio) ----
+// Primero se ve solo la tarjeta principal; con un clic, la rueda, deslizar o el teclado
+// aparecen la barra y las demás tarjetas (la animación está en estilos.css).
+function entrarAplicativo() {
+  if (!document.body.classList.contains("portada")) return;
+  window.scrollTo(0, 0);
+  document.body.classList.add("entrando");
+  document.body.classList.remove("portada");
+  setTimeout(() => document.body.classList.remove("entrando"), 900);
+}
+
+// Cuánto subir la barra (escondida) para que el hero quede a 14 px del borde de arriba.
+// Se mide de nuevo cuando cargan las fuentes y al cambiar el tamaño de la ventana, porque
+// el alto de la barra cambia con la fuente (Geist llega después del primer dibujo).
+function ajustarPortada() {
+  if (!document.body.classList.contains("portada")) return;
+  const barra = document.querySelector(".barra");
+  document.documentElement.classList.add("sin-animar");
+  const alto = barra.offsetHeight + parseFloat(getComputedStyle(barra).marginBottom) - 14;
+  document.documentElement.style.setProperty("--alto-barra", `${alto}px`);
+  void document.body.offsetHeight; // aplica el estilo antes de reactivar la animación
+  // el navegador «ancla» el desplazamiento cuando la barra cambia de alto: se vuelve arriba
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => document.documentElement.classList.remove("sin-animar"));
+}
+
+function prepararEntrada() {
+  if (seccionActual() !== "inicio") return; // abierto directo en un módulo: sin transición
+  document.body.classList.add("portada");
+  ajustarPortada();
+  if (document.fonts) document.fonts.ready.then(ajustarPortada);
+  window.addEventListener("resize", ajustarPortada);
+
+  let toqueY = null;
+  const alDeslizar = (ev) => { if (ev.deltaY > 0) entrarAplicativo(); };
+  const alTocar = (ev) => { toqueY = ev.touches[0].clientY; };
+  const alMover = (ev) => { if (toqueY !== null && toqueY - ev.touches[0].clientY > 30) entrarAplicativo(); };
+  const alTeclear = (ev) => {
+    if (["ArrowDown", "PageDown", " ", "Enter"].includes(ev.key)) { ev.preventDefault(); entrarAplicativo(); }
+  };
+  window.addEventListener("wheel", alDeslizar, { passive: true });
+  window.addEventListener("touchstart", alTocar, { passive: true });
+  window.addEventListener("touchmove", alMover, { passive: true });
+  window.addEventListener("keydown", alTeclear);
+  document.querySelector(".hero-inicio").addEventListener("click", entrarAplicativo);
+  // si se navega a otra sección (p. ej. con atrás), se entra sin animación
+  window.addEventListener("hashchange", () => document.body.classList.remove("portada", "entrando"));
+  const limpiar = new MutationObserver(() => {
+    if (document.body.classList.contains("portada")) return;
+    window.removeEventListener("wheel", alDeslizar);
+    window.removeEventListener("touchstart", alTocar);
+    window.removeEventListener("touchmove", alMover);
+    window.removeEventListener("keydown", alTeclear);
+    window.removeEventListener("resize", ajustarPortada);
+    limpiar.disconnect();
+  });
+  limpiar.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+}
+
 // ---- arranque ----
 // Los <script> van al final del body: DOMContentLoaded llega cuando ya se
 // cargaron todos los módulos (también los que están en otros archivos).
 document.addEventListener("DOMContentLoaded", () => {
+  prepararEntrada();
   for (const m of Object.values(MODULOS)) m.conectar();
   restaurarSelecciones();
   window.addEventListener("hashchange", mostrarSeccion);

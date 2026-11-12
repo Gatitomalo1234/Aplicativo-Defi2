@@ -85,17 +85,23 @@ Cumple:
   (jun. 2024) no produce salto falso (retorno máx. 5 % en esa ventana).
 
 Falta:
-- Cierre **sin ajustar** como S₀ cuando se valoren opciones (fase 6); ajustado para retornos.
 - Mínimo de observaciones: el taller pide ≥ 756 retornos para su rolling; hoy
   exigimos ≥ 30, y el rango por defecto (3 años) da ~750. Decidir por módulo.
-- Divisas cotizan ~260 días/año (COP=X), no 252: decidir cómo anualizar.
+- Divisas cotizan ~260 días/año (COP=X), no 252: se decidió dejarlo así (11 nov).
+- Cierre sin ajustar como S₀: no aplica (en opciones reales S es el valor del proyecto).
+
+Precarga (11 nov): `datos/descarga_datos.py` baja las 32 series recomendadas (mismas listas que
+SERIES_MODELO y CANASTAS). Sin conexión, el servidor elige la copia guardada que más se cruza con
+el rango pedido y, en empate, la que trae menos fechas de sobra (`_mejor_copia`).
+Inicio (11 nov): al abrir en Inicio se ve solo la tarjeta principal; un clic, la rueda, deslizar o
+el teclado muestran la barra y las demás tarjetas (`prepararEntrada` en app.js, `body.portada`).
 
 ## Cómo correrlo
 
 ```
 pip install -r requirements.txt
-python servidor.py          # abre http://localhost:8000
-python datos/descarga_datos.py   # antes de la sustentación: precarga la caché
+python3 servidor.py               # abre http://localhost:8000
+python3 datos/descarga_datos.py   # antes de la sustentación: precarga las 32 series
 ```
 
 ## Estado (11 nov 2026)

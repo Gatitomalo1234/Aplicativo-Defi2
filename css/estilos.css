@@ -280,6 +280,52 @@ em { color: var(--acento); font-style: normal; font-size: 0.92em; }
 @media (prefers-reduced-motion: reduce) { .orbe { animation: none; } }
 .intro { margin: 0; max-width: 46ch; font-size: 14.5px; color: #3e5272; text-align: right; }
 
+/* ---- entrada al aplicativo: primero solo la tarjeta principal ---- */
+/* body.portada: solo el hero, a pantalla completa, sin barra; un clic, la rueda, deslizar o
+   el teclado llaman a entrarAplicativo() (app.js), que quita la clase. body.entrando dura lo
+   que la animación: la barra baja y las tarjetas aparecen. --alto-barra lo mide app.js. */
+body.portada { overflow: hidden; }
+/* sin «anclaje» del desplazamiento: si no, el navegador mueve la página cuando la barra
+   (escondida) cambia de alto al cargar la fuente */
+html:has(body.portada) { overflow-anchor: none; }
+.sin-animar *, .sin-animar *::before, .sin-animar *::after { transition: none !important; }
+.barra { transition: margin-top 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease 0.15s; }
+body.portada .barra, body.entrando .barra { position: relative; top: 0; }
+body.portada .barra { margin-top: calc(-1 * var(--alto-barra, 96px)); opacity: 0; pointer-events: none; }
+.hero-inicio { transition: min-height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+body.portada .hero-inicio { min-height: calc(100vh - 28px); min-height: calc(100svh - 28px); cursor: pointer; }
+body.portada .hero-inicio { padding-bottom: 96px; } /* espacio para «Desliza o haz clic…» */
+.hero-inicio { transition: min-height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), padding-bottom 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+#inicio > .tarjeta:not(.hero-inicio) { transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+#inicio > .tarjeta:nth-child(2) { transition-delay: 0.3s; }
+#inicio > .tarjeta:nth-child(3) { transition-delay: 0.45s; }
+body.portada #inicio > .tarjeta:not(.hero-inicio) { opacity: 0; transform: translateY(48px); }
+.entrar {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  font: 500 13px var(--ui);
+  color: #3e5272;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translateX(-50%);
+  transition: opacity 0.4s;
+}
+.entrar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; animation: bajar 1.8s ease-in-out infinite; }
+@keyframes bajar { 50% { transform: translateY(5px); } }
+body:not(.portada) .entrar { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .barra, .hero-inicio, #inicio > .tarjeta { transition: none !important; }
+  .entrar svg { animation: none; }
+}
+
 /* secciones en pausa */
 .chip-pausa {
   padding: 4px 12px;
@@ -904,7 +950,7 @@ input[type="range"]::-moz-range-thumb {
 .mapa {
   margin: 26px 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
 }
 .mapa .fila {

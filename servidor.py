@@ -16,7 +16,7 @@ internet, el aplicativo usa la última copia guardada de ese ticker y lo dice.
 
 import glob
 import json
-from datetime import datetime
+from datetime import date, datetime
 import os
 import re
 import threading
@@ -90,11 +90,27 @@ def _archivo_cache(ticker, desde, hasta):
     return os.path.join(CACHE, f"{seguro}__{desde}__{hasta}.json")
 
 
-def _ultima_copia(ticker):
-    """La copia guardada más reciente de un ticker, para cualquier rango."""
+def _mejor_copia(ticker, desde, hasta):
+    """Sin conexión: la copia guardada de ese ticker cuyo rango más se cruza con el
+    pedido (p. ej. el S&P 500 tiene copias de 5 años, 10 años y 2006-09). Empate: la que
+    trae menos fechas de sobra (5 años antes que 10); luego, la más reciente."""
     seguro = ticker.upper().replace("^", "IDX_").replace("=", "_")
     archivos = glob.glob(os.path.join(CACHE, f"{seguro}__*.json"))
-    return max(archivos, key=os.path.getmtime) if archivos else None
+    if not archivos:
+        return None
+    pedido = (date.fromisoformat(desde), date.fromisoformat(hasta))
+
+    def puntaje(ruta):
+        try:
+            _, d, h = os.path.basename(ruta)[:-5].rsplit("__", 2)
+            d, h = date.fromisoformat(d), date.fromisoformat(h)
+        except ValueError:
+            return (0, 0, os.path.getmtime(ruta))
+        cruce = max((min(pedido[1], h) - max(pedido[0], d)).days, 0)
+        sobra = (h - d).days - cruce
+        return (cruce, -sobra, os.path.getmtime(ruta))
+
+    return max(archivos, key=puntaje)
 
 
 def historico(ticker, desde, hasta):
@@ -107,7 +123,7 @@ def historico(ticker, desde, hasta):
             f"entre {desde} y {hasta}. Revisa el ticker o el rango de fechas."
         }
     except Exception as e:  # sin internet, Yahoo caído, yfinance no instalado...
-        copia = _ultima_copia(ticker)
+        copia = _mejor_copia(ticker, desde, hasta)
         if copia:
             with open(copia, encoding="utf-8") as f:
                 datos = json.load(f)
