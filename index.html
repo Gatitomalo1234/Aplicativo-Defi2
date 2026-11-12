@@ -238,13 +238,19 @@
 
   <div class="tarjeta col-6 explica" data-parte="explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
-    <p>La escala del riesgo (la banda crece como √t) y sirve de base para Black-Scholes.
-    <em>[completar con nuestras palabras]</em></p>
+    <ul class="puntos">
+      <li>La escala del riesgo: la incertidumbre crece con √t, así que la banda a un año es mucho más ancha que a un mes.</li>
+      <li>Precios que nunca son negativos y retornos que se acumulan en porcentaje.</li>
+      <li>Es la base de Black-Scholes y el punto de comparación de todos los demás modelos.</li>
+    </ul>
   </div>
   <div class="tarjeta col-6 explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
-    <p>Colas gordas, clustering de volatilidad, crashes. Comparar contra los retornos
-    reales en la sección Comparación. <em>[completar]</em></p>
+    <ul class="puntos">
+      <li>Colas gordas: la peor caída de NVDA (−18.6 % en un día) son 6 desviaciones estándar; con una normal no debería pasar ni una vez en millones de años.</li>
+      <li>Volatilidad que cambia: aquí σ es fija, pero el mercado alterna épocas tranquilas y nerviosas.</li>
+      <li>Saltos y memoria: el precio nunca salta y cada día es independiente del anterior.</li>
+    </ul>
   </div>
 </section>
 
@@ -347,11 +353,19 @@
 
   <div class="tarjeta col-6 explica" data-parte="explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
-    <p><em>[completar con nuestras palabras: colas gordas, riesgo de evento separado del ruido diario, earnings]</em></p>
+    <ul class="puntos">
+      <li>Separa dos riesgos: el ruido de todos los días (σ) y los eventos raros (λ, los saltos).</li>
+      <li>Genera colas gordas: los días extremos son más frecuentes que en el GBM.</li>
+      <li>En NVDA, al sacar 9 días de salto la volatilidad anual del ruido baja de 47 % a ≈ 42 %.</li>
+    </ul>
   </div>
   <div class="tarjeta col-6 explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
-    <p><em>[completar: clustering de volatilidad, saltos que no son independientes entre sí, el umbral es una elección nuestra]</em></p>
+    <ul class="puntos">
+      <li>Cuándo llega un salto: son al azar, aunque los resultados trimestrales tengan fecha conocida.</li>
+      <li>Saltos en racha: en el modelo un salto no hace más probable el siguiente; en una crisis sí pasa.</li>
+      <li>La estimación depende del umbral c que elegimos, y el método no detecta los saltos pequeños.</li>
+    </ul>
   </div>
 </section>
 
@@ -435,11 +449,19 @@
 
   <div class="tarjeta col-6 explica" data-parte="explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
-    <p><em>[completar con nuestras palabras: por qué el VIX vuelve a su nivel, qué significa la vida media para alguien que opera volatilidad]</em></p>
+    <ul class="puntos">
+      <li>Reversión a la media: si el nivel se aleja del equilibrio θ, tiende a volver.</li>
+      <li>La vida media dice qué tan rápido vuelve: el VIX cierra la mitad de la distancia en ≈ 7 días hábiles.</li>
+      <li>La incertidumbre deja de crecer: la banda se estabiliza, a diferencia del GBM.</li>
+    </ul>
   </div>
   <div class="tarjeta col-6 explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
-    <p><em>[completar: el resultado de la TRM; que X puede volverse negativo (por eso existe el modelo CIR para tasas); θ y κ constantes en el tiempo]</em></p>
+    <ul class="puntos">
+      <li>Puede dar valores negativos; para tasas, el modelo CIR evita ese problema.</li>
+      <li>θ y κ son fijos: si el equilibrio cambia (tasas en 2022-23), el modelo lo ve como una reversión lenta.</li>
+      <li>Con la TRM la estimación es poco precisa (b̂ ≈ 0.996): no podemos asegurar que revierta.</li>
+    </ul>
   </div>
 </section>
 
@@ -532,11 +554,19 @@
 
   <div class="tarjeta col-6 explica" data-parte="explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
-    <p><em>[completar con nuestras palabras: momentum y sobre-reacción, qué dice el Ĥ de la serie real]</em></p>
+    <ul class="puntos">
+      <li>Mide la memoria con un solo número: H > 0.5 es momentum y H < 0.5 es sobre-reacción.</li>
+      <li>Con H = 0.5 vuelve a ser el GBM, así que se ve solo el efecto de la memoria.</li>
+      <li>En los datos: NVDA no tiene memoria (Ĥ ≈ 0.48) y el VIX es antipersistente (Ĥ ≈ 0.37), igual que en OU.</li>
+    </ul>
   </div>
   <div class="tarjeta col-6 explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
-    <p><em>[completar: con H ≠ 0.5 no aplica Itô y el modelo permite arbitraje si se usa para valorar; H constante en el tiempo]</em></p>
+    <ul class="puntos">
+      <li>No sirve para valorar opciones: con H ≠ 0.5 no aplica Itô y aparecen oportunidades de arbitraje.</li>
+      <li>La memoria es fija: no capta que cambie entre épocas del mercado.</li>
+      <li>Con 3 años de datos, un Ĥ entre 0.4 y 0.6 no se distingue de 0.5.</li>
+    </ul>
   </div>
 </section>
 
@@ -618,13 +648,19 @@
 
   <div class="tarjeta col-6 explica" data-parte="explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
-    <p><em>[completar con nuestras palabras: qué significa que las acciones se muevan juntas en días
-    extremos, GameStop 2021 y la crisis subprime]</em></p>
+    <ul class="puntos">
+      <li>Mide si las acciones se mueven juntas en días extremos: la dispersión crece menos de lo esperado (γ₂ < 0).</li>
+      <li>Dos pruebas que se complementan: CSAD usa todos los días y CSSD solo los extremos.</li>
+      <li>Con nuestras canastas no hay evidencia significativa: las acciones meme dan γ̂₂ < 0, pero con p ≈ 0.06.</li>
+    </ul>
   </div>
   <div class="tarjeta col-6 explica">
     <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
-    <p><em>[completar: es una medida, no un modelo de precios; depende de qué acciones entran en la
-    canasta y de la ventana; LSV necesita datos de fondos que no tenemos]</em></p>
+    <ul class="puntos">
+      <li>Es una medida, no un modelo: no simula precios ni explica por qué la gente imita.</li>
+      <li>El resultado depende de qué acciones entran en la canasta y de la ventana de fechas.</li>
+      <li>LSV no se puede calcular: necesita las operaciones de los fondos, que Yahoo no tiene.</li>
+    </ul>
   </div>
 </section>
 

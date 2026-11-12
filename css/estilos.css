@@ -828,6 +828,23 @@ input[type="range"]::-moz-range-thumb {
 
 /* ---- qué explica / qué no ---- */
 .explica p { margin: 0; color: var(--tinta-2); }
+.puntos { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.puntos li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--tinta-2);
+}
+.puntos li::before {
+  content: "";
+  position: absolute;
+  left: 2px; top: 0.6em;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--acento);
+}
+.explica:has(.marca-no) .puntos li::before { background: var(--coral); }
 .explica h2 { display: flex; align-items: center; gap: 10px; }
 .marca-si, .marca-no {
   width: 28px; height: 28px;

@@ -118,6 +118,8 @@ L = ⌊4(T/100)^(2/9)⌋ (verificado contra statsmodels: diferencia ~1e-13). LSV
 evidencia significativa de manada (meme período completo p ≈ 0.06). Canastas en `CANASTAS`
 (manada.js); en Toma de datos se bajan como canasta y se recuerdan.
 F6 (opciones reales) EN PAUSA: depende de lo que presentaron los compañeros.
+Textos «Qué explica / qué no» (5 modelos): borrador escrito con Claude el 11 nov a pedido de
+Nicolás, en viñetas con cifras que muestra el aplicativo. Revisar y pasar a palabras del equipo.
 Rediseño visual (F8) hecho el 11 nov, pendiente de revisión: ambiente de la app "Payno"
 (cielo, titulares ligeros) + interfaz de tablero tipo "Spotbank" (tarjetas, pestañas píldora,
 riel de iconos, cifra grande, fichas). Tipografías locales en `fuentes/` (OFL): Geist (interfaz),
