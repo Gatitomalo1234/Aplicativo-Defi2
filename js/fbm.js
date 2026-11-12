@@ -126,12 +126,16 @@ MODULOS.fbm = {
     if (mercadoFBM) dibujarLogLog($("fbm-loglog"), mercadoFBM.cal.puntos, mercadoFBM.cal);
   },
   conectar() {
-    conectarFormularioDatos("fbm", (datos) => {
+    registrarDatos("fbm", (datos) => {
       const cal = calibrarFBM(datos.precios);
       mercadoFBM = { datos, cal };
       for (const id of ["mu", "sigma", "H"]) fijarSlider(`fbm-${id}`, cal[id]);
       mostrarCalibracionFBM();
       simularYDibujarFBM();
+    }, () => {
+      mercadoFBM = null;
+      $("fbm-calib-tarjeta").hidden = true;
+      modoSustentacionFBM(); // parámetros de ejemplo (H = 0.5) y semilla 2026
     });
     for (const id of ["fbm-mu", "fbm-sigma", "fbm-H", "fbm-dias", "fbm-n"]) {
       $(id).addEventListener("input", simularYDibujarFBM);

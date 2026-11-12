@@ -53,6 +53,7 @@ function bandasDe(caminos) {
 //   minimoCero: false                -> permite valores negativos en el eje (OU: niveles),
 //   nombreHistorico: "valor real"    -> rótulo de la serie histórica en la leyenda }
 function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
+  if (!canvas.clientWidth) return; // sección oculta: se dibuja al mostrarse
   const o = {
     formato: (v) => v.toFixed(1), historico: [], fechasHistorico: [],
     referencia: null, marcas: [], lineaH: null, minimoCero: true,
@@ -280,6 +281,7 @@ function dibujarAbanico(canvas, caminos, opciones = {}, hoverIndice = null) {
 // La escala vertical es raíz cuadrada del conteo: así las colas (pocos días)
 // se alcanzan a ver junto al centro (cientos de días). Se dice en el eje.
 function dibujarHistograma(canvas, retornos, opciones = {}) {
+  if (!canvas.clientWidth) return;
   const dpr = window.devicePixelRatio || 1;
   const ancho = canvas.clientWidth, alto = canvas.clientHeight;
   canvas.width = ancho * dpr;
@@ -330,13 +332,15 @@ function dibujarHistograma(canvas, retornos, opciones = {}) {
   }
   ctx.setLineDash([]);
 
-  // leyenda
-  ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(margen.izq, 6, 12, 10);
-  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días normales", margen.izq + 16, 11);
-  ctx.fillStyle = ESTILO_GRAFICO.marca; ctx.fillRect(margen.izq + 110, 6, 12, 10);
-  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días de salto (fuera del umbral)", margen.izq + 126, 11);
-  ctx.textAlign = "right";
+  // leyenda (solo cuando hay umbral de salto)
+  if (opciones.umbralInf !== undefined) {
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(margen.izq, 6, 12, 10);
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días normales", margen.izq + 16, 11);
+    ctx.fillStyle = ESTILO_GRAFICO.marca; ctx.fillRect(margen.izq + 110, 6, 12, 10);
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("días de salto (fuera del umbral)", margen.izq + 126, 11);
+  }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = ESTILO_GRAFICO.texto;
   ctx.fillText("altura: √(número de días)", margen.izq + W, 11);
 }
 
@@ -344,6 +348,7 @@ function dibujarHistograma(canvas, retornos, opciones = {}) {
 // puntos: [{ k, sd }]; ajuste: { H, c } -> recta sd = c·k^H;
 // también se dibuja la recta de pendiente 0.5 (sin memoria) por el punto k = 1.
 function dibujarLogLog(canvas, puntos, ajuste) {
+  if (!canvas.clientWidth) return;
   const dpr = window.devicePixelRatio || 1;
   const ancho = canvas.clientWidth, alto = canvas.clientHeight;
   canvas.width = ancho * dpr;
@@ -405,4 +410,85 @@ function dibujarLogLog(canvas, puntos, ajuste) {
   ctx.strokeStyle = ESTILO_GRAFICO.referencia; ctx.setLineDash([5, 4]);
   ctx.beginPath(); ctx.moveTo(lx, 10); ctx.lineTo(lx + 14, 10); ctx.stroke(); ctx.setLineDash([]);
   ctx.fillText("pendiente 0.5 (sin memoria)", lx + 18, 10);
+}
+
+// Línea de precio en el tiempo (sección «Toma de datos»), con hover: fecha y valor.
+function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), hoverIndice = null) {
+  if (!canvas.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = canvas.clientWidth, alto = canvas.clientHeight;
+  canvas.width = ancho * dpr;
+  canvas.height = alto * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  ctx.font = ESTILO_GRAFICO.fuente;
+
+  const margen = { izq: 58, der: 14, arr: 14, aba: 26 };
+  const W = ancho - margen.izq - margen.der;
+  const H = alto - margen.arr - margen.aba;
+  const n = valores.length;
+  let yMin = Math.min(...valores), yMax = Math.max(...valores);
+  const holgura = (yMax - yMin) * 0.08 || 1;
+  yMin -= holgura; yMax += holgura;
+  const px = (i) => margen.izq + (i / Math.max(n - 1, 1)) * W;
+  const py = (v) => margen.arr + (1 - (v - yMin) / (yMax - yMin)) * H;
+
+  // rejilla y eje y
+  for (let g = 0; g <= 4; g++) {
+    const v = yMin + ((yMax - yMin) * g) / 4;
+    ctx.strokeStyle = ESTILO_GRAFICO.rejilla; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(margen.izq, py(v)); ctx.lineTo(ancho - margen.der, py(v)); ctx.stroke();
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.font = ESTILO_GRAFICO.fuenteCifras; ctx.fillText(formato(v), margen.izq - 6, py(v));
+    ctx.font = ESTILO_GRAFICO.fuente;
+  }
+  // eje x: primera, del medio y última fecha
+  ctx.textBaseline = "top";
+  [[0, "left"], [Math.floor((n - 1) / 2), "center"], [n - 1, "right"]].forEach(([i, al]) => {
+    ctx.textAlign = al; ctx.fillText(fechas[i], px(i), alto - margen.aba + 7);
+  });
+
+  // área suave bajo la línea y la línea
+  const grad = ctx.createLinearGradient(0, margen.arr, 0, margen.arr + H);
+  grad.addColorStop(0, "rgba(61, 111, 230, 0.18)");
+  grad.addColorStop(1, "rgba(61, 111, 230, 0)");
+  ctx.beginPath(); ctx.moveTo(px(0), py(valores[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(px(i), py(valores[i]));
+  ctx.lineTo(px(n - 1), margen.arr + H); ctx.lineTo(px(0), margen.arr + H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(0), py(valores[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(px(i), py(valores[i]));
+  ctx.strokeStyle = ESTILO_GRAFICO.historico; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // hover
+  if (hoverIndice !== null && hoverIndice >= 0 && hoverIndice < n) {
+    const i = hoverIndice;
+    ctx.strokeStyle = ESTILO_GRAFICO.eje; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px(i), margen.arr); ctx.lineTo(px(i), margen.arr + H); ctx.stroke();
+    ctx.fillStyle = ESTILO_GRAFICO.mediana;
+    ctx.beginPath(); ctx.arc(px(i), py(valores[i]), 4, 0, 2 * Math.PI); ctx.fill();
+    const texto = `${fechas[i]} · ${formato(valores[i])}`;
+    const a = ctx.measureText(texto).width + 12;
+    const tx = Math.max(4, Math.min(px(i) - a / 2, ancho - 4 - a));
+    ctx.fillStyle = "#FFFFFF"; ctx.strokeStyle = ESTILO_GRAFICO.rejilla;
+    ctx.beginPath(); ctx.roundRect(tx, margen.arr + 1, a, 22, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = ESTILO_GRAFICO.historico; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(texto, tx + 6, margen.arr + 12);
+  }
+
+  canvas._linea = { fechas, valores, formato, margen, W, n };
+  if (!canvas._hoverLinea) {
+    canvas._hoverLinea = true;
+    canvas.addEventListener("mousemove", (ev) => {
+      const e = canvas._linea;
+      const x = ev.clientX - canvas.getBoundingClientRect().left;
+      const i = Math.round(((x - e.margen.izq) / e.W) * (e.n - 1));
+      dibujarLinea(canvas, e.fechas, e.valores, e.formato, i);
+    });
+    canvas.addEventListener("mouseleave", () => {
+      const e = canvas._linea;
+      dibujarLinea(canvas, e.fechas, e.valores, e.formato);
+    });
+  }
 }

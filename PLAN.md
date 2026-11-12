@@ -46,7 +46,8 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 
 ## Estructura de archivos
 
-- `servidor.py` — servidor local + endpoint `/api/historico` (Yahoo Finance + caché)
+- `servidor.py` — servidor local + `/api/historico` (Yahoo + caché), `/api/guardados`,
+  `/api/guardado`, `/api/importar` (CSV propio)
 - `requirements.txt` — yfinance
 - `index.html` — el aplicativo
 - `css/estilos.css` — diseño (tokens de color, tablero de tarjetas, sliders propios)
@@ -59,6 +60,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `js/ou.js` — módulo de Ornstein-Uhlenbeck
 - `js/fbm.js` — módulo del browniano fraccional
+- `js/tomadatos.js` — sección Toma de datos: series por modelo, guardadas, CSV propio, vista rápida
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
 - `datos/cache/` — se crea solo al descargar
 

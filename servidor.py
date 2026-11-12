@@ -16,6 +16,7 @@ internet, el aplicativo usa la última copia guardada de ese ticker y lo dice.
 
 import glob
 import json
+from datetime import datetime
 import os
 import re
 import threading
@@ -60,8 +61,6 @@ def limpiar_serie(fechas, precios):
 def obtener_de_yahoo(ticker, desde, hasta):
     """Precios de cierre ajustados (dividendos y splits) entre dos fechas.
     Ojo: en yfinance la fecha `hasta` es exclusiva."""
-    from datetime import datetime
-
     import pandas as pd
     import yfinance as yf
 
@@ -113,6 +112,7 @@ def historico(ticker, desde, hasta):
             with open(copia, encoding="utf-8") as f:
                 datos = json.load(f)
             datos["fuente"] = "copia guardada"
+            datos["archivo"] = os.path.basename(copia)
             datos["aviso"] = (
                 f"No hubo conexión con Yahoo Finance ({type(e).__name__}). "
                 f"Se usa la copia guardada de {datos['ticker']}, "
@@ -125,10 +125,103 @@ def historico(ticker, desde, hasta):
         }
 
     datos.update(ticker=ticker.upper(), desde=desde, hasta=hasta, fuente="Yahoo Finance")
+    return 200, _guardar(datos, _archivo_cache(ticker, desde, hasta))
+
+
+def _guardar(datos, ruta):
+    """Guarda la serie en datos/cache/ y devuelve los datos con el nombre del archivo."""
     os.makedirs(CACHE, exist_ok=True)
-    with open(_archivo_cache(ticker, desde, hasta), "w", encoding="utf-8") as f:
+    with open(ruta, "w", encoding="utf-8") as f:
         json.dump(datos, f)
+    return {**datos, "archivo": os.path.basename(ruta)}
+
+
+# ---- series guardadas (sección "Toma de datos") ----
+PATRON_ARCHIVO = re.compile(r"^[A-Za-z0-9_.\-]+__\d{4}-\d{2}-\d{2}__\d{4}-\d{2}-\d{2}\.json$")
+PATRON_NOMBRE = re.compile(r"^[A-Za-z0-9_\-]{1,20}$")
+
+
+def listar_guardados():
+    """Resumen de cada serie guardada, la más reciente primero."""
+    filas = []
+    for ruta in sorted(glob.glob(os.path.join(CACHE, "*.json")), key=os.path.getmtime, reverse=True):
+        try:
+            with open(ruta, encoding="utf-8") as f:
+                d = json.load(f)
+            calidad = d.get("calidad", {})
+            filas.append({
+                "archivo": os.path.basename(ruta),
+                "ticker": d["ticker"],
+                "primera": d["fechas"][0],
+                "ultima": d["fechas"][-1],
+                "n": len(d["precios"]),
+                "fuente": d.get("fuente", ""),
+                "consultado": calidad.get("consultado")
+                or datetime.fromtimestamp(os.path.getmtime(ruta)).strftime("%Y-%m-%d %H:%M"),
+            })
+        except (OSError, ValueError, KeyError, IndexError):
+            continue  # un archivo dañado no impide listar los demás
+    return filas
+
+
+def leer_guardado(archivo):
+    """Una serie guardada por su nombre de archivo (sin rutas: solo dentro de datos/cache/)."""
+    if not PATRON_ARCHIVO.match(archivo):
+        return 400, {"error": "Nombre de archivo no válido."}
+    ruta = os.path.join(CACHE, archivo)
+    if not os.path.isfile(ruta):
+        return 404, {"error": f"No existe la copia guardada {archivo}."}
+    with open(ruta, encoding="utf-8") as f:
+        datos = json.load(f)
+    datos["fuente"] = f"{datos.get('fuente', '')} · copia guardada"
+    datos["archivo"] = archivo
     return 200, datos
+
+
+def borrar_guardado(archivo):
+    """Borra una serie guardada (solo archivos de datos/cache/, por nombre exacto)."""
+    if not PATRON_ARCHIVO.match(str(archivo)):
+        return 400, {"error": "Nombre de archivo no válido."}
+    ruta = os.path.join(CACHE, archivo)
+    if not os.path.isfile(ruta):
+        return 404, {"error": f"No existe la copia guardada {archivo}."}
+    os.remove(ruta)
+    return 200, {"borrado": archivo}
+
+
+def importar_csv(cuerpo):
+    """Serie propia leída de un CSV en el navegador. Se limpia con las mismas reglas
+    del taller y se guarda como las demás, registrando su procedencia."""
+    nombre = str(cuerpo.get("nombre", "")).strip().upper()
+    fechas, precios = cuerpo.get("fechas"), cuerpo.get("precios")
+    original = str(cuerpo.get("archivo_original", "archivo.csv"))[:80]
+    if not PATRON_NOMBRE.match(nombre):
+        return 400, {"error": "Ponle a la serie un nombre corto: letras, números, _ o - (máx. 20)."}
+    if not isinstance(fechas, list) or not isinstance(precios, list) or len(fechas) != len(precios):
+        return 400, {"error": "El CSV no trae columnas de fecha y precio del mismo largo."}
+    if len(fechas) > 50000:
+        return 400, {"error": "El CSV tiene demasiadas filas (máximo 50 000)."}
+    if not all(isinstance(f, str) and PATRON_FECHA.match(f) for f in fechas):
+        return 400, {"error": "Hay fechas que no tienen el formato AAAA-MM-DD."}
+    numeros = [p if isinstance(p, (int, float)) else None for p in precios]
+    fechas, numeros, descartes = limpiar_serie(fechas, numeros)
+    if len(numeros) < 2:
+        return 400, {"error": "Después de limpiar, el CSV no tiene suficientes precios válidos."}
+    datos = {
+        "fechas": fechas,
+        "precios": numeros,
+        "ticker": nombre,
+        "desde": fechas[0],
+        "hasta": fechas[-1],
+        "fuente": f"CSV propio ({original})",
+        "calidad": {
+            "n_recibidos": len(precios),
+            "n_validos": len(numeros),
+            "descartes": descartes,
+            "consultado": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        },
+    }
+    return 200, _guardar(datos, _archivo_cache(nombre, fechas[0], fechas[-1]))
 
 
 PUBLICOS = ("/", "/index.html", "/favicon.ico")
@@ -145,12 +238,35 @@ class Manejador(SimpleHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/api/historico":
             return self._api_historico(parse_qs(url.query))
+        if url.path == "/api/guardados":
+            return self._json(200, {"series": listar_guardados()})
+        if url.path == "/api/guardado":
+            return self._json(*leer_guardado(parse_qs(url.query).get("archivo", [""])[0]))
         # solo se sirve lo que usa el aplicativo (no el código Python, la caché, etc.)
         if url.path in PUBLICOS or (
             url.path.startswith(CARPETAS_PUBLICAS) and ".." not in url.path
         ):
             return super().do_GET()
         return self.send_error(404)
+
+    def do_POST(self):
+        ruta = urlparse(self.path).path
+        if ruta not in ("/api/importar", "/api/borrar"):
+            return self.send_error(404)
+        largo = int(self.headers.get("Content-Length", 0))
+        if largo > 5_000_000:
+            return self._json(413, {"error": "El archivo es demasiado grande (máximo 5 MB)."})
+        try:
+            cuerpo = json.loads(self.rfile.read(largo).decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return self._json(400, {"error": "No se pudo leer la serie enviada."})
+        if ruta == "/api/borrar":
+            codigo, respuesta = borrar_guardado(cuerpo.get("archivo", ""))
+            print(f"  borrar {cuerpo.get('archivo', '')}: {respuesta.get('error', 'borrado')}")
+            return self._json(codigo, respuesta)
+        codigo, respuesta = importar_csv(cuerpo)
+        print(f"  CSV propio {cuerpo.get('nombre', '')}: {respuesta.get('error', 'guardado')}")
+        return self._json(codigo, respuesta)
 
     def end_headers(self):
         # que el navegador revalide siempre: si no, tras editar el CSS o el JS

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Romper el mercado perfecto</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='o' cx='35%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.35' stop-color='%239cc0f5'/%3E%3Cstop offset='.75' stop-color='%233d6fe6'/%3E%3Cstop offset='1' stop-color='%231d2d50'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23o)'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="fuentes/fuentes.css">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
@@ -13,6 +14,7 @@
   <a class="marca" href="#inicio"><span class="marca-orbe" aria-hidden="true"></span>Romper el mercado perfecto</a>
   <nav id="navegacion" aria-label="Modelos">
     <a href="#inicio" data-seccion="inicio">Inicio</a>
+    <a href="#datos" data-seccion="datos">Toma de datos</a>
     <a href="#gbm" data-seccion="gbm"><span class="num">1</span>GBM</a>
     <a href="#merton" data-seccion="merton"><span class="num">2</span>Merton</a>
     <a href="#ou" data-seccion="ou"><span class="num">3</span>OU</a>
@@ -95,6 +97,67 @@
   </div>
 </section>
 
+<section id="datos" class="tablero" hidden>
+  <div class="tarjeta hero hero-solo ancho">
+    <div class="hero-texto">
+      <p class="eyebrow">Paso 0 · antes de modelar</p>
+      <h1>Toma de <span class="resalte">datos</span></h1>
+      <p class="bajada">Bajar, revisar y elegir la serie que usa cada modelo.</p>
+    </div>
+  </div>
+
+  <div class="tarjeta ancho">
+    <div class="tarjeta-cabeza"><h2>Series por modelo</h2><span class="nota-cabeza">elige una serie recomendada: se baja y queda en uso en ese modelo</span></div>
+    <div class="modelos-datos" id="datos-modelos"></div>
+  </div>
+
+  <div class="tarjeta col-7">
+    <div class="tarjeta-cabeza"><h2>Bajar una serie</h2><span class="nota-cabeza">Yahoo Finance · se guarda en el computador</span></div>
+    <form class="datos-mercado" id="datos-form">
+      <label>Ticker
+        <input type="text" id="datos-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Desde <input type="date" id="datos-desde"></label>
+      <label>Hasta <input type="date" id="datos-hasta"></label>
+      <button type="submit" id="datos-bajar">Bajar</button>
+    </form>
+    <div class="tarjeta-cabeza subcabeza"><h3>O cargar un CSV propio</h3><span class="nota-cabeza">si la descarga falla (regla del taller)</span></div>
+    <form class="datos-mercado" id="datos-csv-form">
+      <label>Nombre de la serie
+        <input type="text" id="datos-csv-nombre" class="ticker" placeholder="MI_SERIE" maxlength="20" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="archivo">Archivo CSV
+        <span class="boton-archivo" id="datos-csv-elegido">Elegir archivo…</span>
+        <input type="file" id="datos-csv-archivo" class="oculto" accept=".csv,text/csv">
+      </label>
+      <button type="submit" id="datos-csv-cargar">Cargar CSV</button>
+    </form>
+    <p class="estado" id="datos-estado" role="status">Necesita el servidor (python servidor.py). Para bajar de
+    Yahoo, además, internet; las series guardadas se abren sin conexión.</p>
+  </div>
+
+  <div class="tarjeta col-5">
+    <div class="tarjeta-cabeza"><h2>Series guardadas</h2><span class="nota-cabeza">en datos/cache · sin internet</span></div>
+    <div class="lista-series" id="datos-guardadas"></div>
+  </div>
+
+  <div class="tarjeta ancho" id="datos-vista" hidden>
+    <div class="tarjeta-cabeza"><h2 id="datos-vista-titulo">Vista rápida</h2><span class="nota-cabeza" id="datos-vista-rango"></span></div>
+    <p class="calidad-linea" id="datos-vista-calidad"></p>
+    <div class="fichas" id="datos-fichas"></div>
+    <div class="dos-columnas vista-graficos">
+      <div><h3>Precio en el tiempo</h3><canvas id="datos-linea"></canvas></div>
+      <div><h3>Retornos diarios</h3><canvas id="datos-hist"></canvas></div>
+    </div>
+    <div class="acciones-vista">
+      <span class="etiqueta-acciones">Usar en</span>
+      <div class="botones-datos" id="datos-usar"></div>
+      <button type="button" class="boton" id="datos-csv-bajar">Descargar CSV</button>
+    </div>
+    <div class="aviso-usar" id="datos-usar-aviso" role="status" hidden></div>
+  </div>
+</section>
+
 <section id="gbm" class="tablero" hidden>
   <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
@@ -121,15 +184,12 @@
   </div>
 
   <div class="tarjeta col-7" data-parte="datos">
-    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
-    <form class="datos-mercado" id="gbm-form">
-      <label>Ticker
-        <input type="text" id="gbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
-      </label>
-      <label>Desde <input type="date" id="gbm-desde"></label>
-      <label>Hasta <input type="date" id="gbm-hasta"></label>
-      <button type="submit" id="gbm-cargar">Cargar y calibrar</button>
-    </form>
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">serie en uso</span></div>
+    <div class="serie-en-uso" id="gbm-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="gbm">Elegir serie en Toma de datos</a>
+      <button type="button" class="boton" id="gbm-quitar" hidden>Quitar serie</button>
+    </div>
     <p class="estado" id="gbm-estado" role="status">Sin datos cargados: el simulador usa
     parámetros de ejemplo y arranca en 100.</p>
   </div>
@@ -206,15 +266,12 @@
     </ul>
   </div>
   <div class="tarjeta col-7" data-parte="datos">
-    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
-    <form class="datos-mercado" id="merton-form">
-    <label>Ticker
-      <input type="text" id="merton-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
-    </label>
-    <label>Desde <input type="date" id="merton-desde"></label>
-    <label>Hasta <input type="date" id="merton-hasta"></label>
-    <button type="submit" id="merton-cargar">Cargar y calibrar</button>
-  </form>
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">serie en uso</span></div>
+    <div class="serie-en-uso" id="merton-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="merton">Elegir serie en Toma de datos</a>
+      <button type="button" class="boton" id="merton-quitar" hidden>Quitar serie</button>
+    </div>
     <p class="estado" id="merton-estado" role="status">Sin datos cargados: el simulador usa
   parámetros de ejemplo, arranca en 100 y con λ = 0 (sin saltos).</p>
   </div>
@@ -320,20 +377,13 @@
   como dh = γ(α − h)dt + ω dW: γ es κ, α es θ y ω es σ.</p>
   </div>
   <div class="tarjeta col-7" data-parte="datos">
-    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
-    <form class="datos-mercado" id="ou-form">
-    <label>Ticker
-      <input type="text" id="ou-ticker" class="ticker" value="^VIX" autocomplete="off" spellcheck="false">
-    </label>
-    <label>Desde <input type="date" id="ou-desde"></label>
-    <label>Hasta <input type="date" id="ou-hasta"></label>
-    <button type="submit" id="ou-cargar">Cargar y calibrar</button>
-    <span class="atajos">
-      <button type="button" data-ticker="^VIX">VIX</button>
-      <button type="button" data-ticker="COP=X">TRM</button>
-      <button type="button" id="ou-ejemplo">Ejemplo del taller</button>
-    </span>
-  </form>
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">serie en uso</span></div>
+    <div class="serie-en-uso" id="ou-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="ou">Elegir serie en Toma de datos</a>
+      <button type="button" class="boton" id="ou-quitar" hidden>Volver al ejemplo del taller</button>
+    </div>
+    <p class="estado aviso" id="ou-aviso" role="status" hidden></p>
     <p class="estado" id="ou-estado" role="status">Sin datos cargados: el simulador muestra el
   ejercicio 3 del taller (liquidez en millones de USD).</p>
   </div>
@@ -411,15 +461,12 @@
   correlacionan con la matriz de covarianzas de los incrementos (factorización de Cholesky).</p>
   </div>
   <div class="tarjeta col-7" data-parte="datos">
-    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">Yahoo Finance</span></div>
-    <form class="datos-mercado" id="fbm-form">
-    <label>Ticker
-      <input type="text" id="fbm-ticker" class="ticker" value="NVDA" autocomplete="off" spellcheck="false">
-    </label>
-    <label>Desde <input type="date" id="fbm-desde"></label>
-    <label>Hasta <input type="date" id="fbm-hasta"></label>
-    <button type="submit" id="fbm-cargar">Cargar y calibrar</button>
-  </form>
+    <div class="tarjeta-cabeza"><h2>Datos de mercado</h2><span class="nota-cabeza">serie en uso</span></div>
+    <div class="serie-en-uso" id="fbm-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="fbm">Elegir serie en Toma de datos</a>
+      <button type="button" class="boton" id="fbm-quitar" hidden>Quitar serie</button>
+    </div>
     <p class="estado" id="fbm-estado" role="status">Sin datos cargados: el simulador usa
   parámetros de ejemplo, arranca en 100 y con H = 0.5 (sin memoria).</p>
   </div>
@@ -565,5 +612,6 @@
 <script src="js/merton.js"></script>
 <script src="js/ou.js"></script>
 <script src="js/fbm.js"></script>
+<script src="js/tomadatos.js"></script>
 </body>
 </html>

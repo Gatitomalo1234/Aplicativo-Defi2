@@ -80,12 +80,14 @@ Cumple:
 - Resumen de calidad en el panel de calibración (n válidos/recibidos, rango, descartes,
   fuente, fecha y hora de consulta, versiones de yfinance y pandas).
 - Versiones fijadas en requirements.txt (yfinance 1.7.0, pandas 3.0.2).
+- CSV propio (sección Toma de datos): se lee en el navegador, el servidor lo limpia con
+  las mismas reglas y lo guarda con su procedencia (`fuente: CSV propio (archivo)`).
+- Exportar CSV con la procedencia en el encabezado (líneas `#`).
 - Verificado con Yahoo real (11 nov): ^GSPC y COP=X funcionan; el split de NVDA
   (jun. 2024) no produce salto falso (retorno máx. 5 % en esa ventana).
 
 Falta:
 - Cierre **sin ajustar** como S₀ cuando se valoren opciones (fase 6); ajustado para retornos.
-- Opción de cargar un CSV propio si la descarga falla, registrando la procedencia.
 - Mínimo de observaciones: el taller pide ≥ 756 retornos para su rolling; hoy
   exigimos ≥ 30, y el rango por defecto (3 años) da ~750. Decidir por módulo.
 - Divisas cotizan ~260 días/año (COP=X), no 252: decidir cómo anualizar.
@@ -115,3 +117,17 @@ Rediseño visual (F8) hecho el 11 nov, pendiente de revisión: ambiente de la ap
 riel de iconos, cifra grande, fichas). Tipografías locales en `fuentes/` (OFL): Geist (interfaz),
 Geist Mono (cifras pequeñas), STIX Two Text (matemáticas y griego; subconjunto a la medida).
 Cada módulo es un `.tablero` con tarjetas marcadas con data-parte para el riel.
+Toma de datos (11 nov, pendiente de revisión): pestaña nueva y único lugar donde se bajan
+series. Los módulos ya no tienen formulario: muestran la "serie en uso" y reciben datos con
+`usarSerieEn` (app.js). La elección se recuerda en localStorage y al reabrir se restaura desde
+`datos/cache/` (sin internet). Servidor: `GET /api/guardados`, `GET /api/guardado?archivo=`,
+`POST /api/importar` (CSV), `POST /api/borrar`. Una serie se puede quitar de un módulo (botón
+«Quitar serie», «quitar» en la tarjeta del modelo o el interruptor «✓ Usar en»): el módulo
+vuelve a los parámetros de ejemplo (`registrarDatos(prefijo, alCargar, alSoltar)`). Las series
+guardadas se pueden borrar desde la lista (con confirmación).
+Cualquier serie se puede usar en cualquier modelo (decisión del 11 nov). OU muestra un aviso si
+la serie parece un precio (`avisoOU` en datos.js: ^VIX, tasas y tipos de cambio `=X` son niveles;
+lo demás, precio; CSV propio, aviso condicional).
+Series por modelo: menú desplegable con 3-4 recomendaciones por modelo + «Otro ticker…»
+(`SERIES_MODELO` en tomadatos.js). Cada «por qué» sale de correr el aplicativo con esa serie
+el 11 nov 2026 (σ, saltos, vida media, Ĥ): si cambian mucho con datos nuevos, actualizarlos.

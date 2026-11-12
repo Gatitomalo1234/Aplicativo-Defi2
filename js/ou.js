@@ -4,7 +4,7 @@
 //   θ = 2.5, σ = 0.40, X(0) = 1.2), pasado a años porque el aplicativo usa dt = 1/252.
 // - La línea punteada es el mismo proceso sin reversión (κ = 0) con las mismas Z:
 //   ahí se ve cómo κ frena el crecimiento de la banda.
-// - Con datos: regresión AR(1) (ver calibrarOU en datos.js).
+// - Con datos (elegidos en «Toma de datos», p. ej. VIX o TRM): regresión AR(1), ver calibrarOU.
 
 const EJEMPLO_OU = { x0: 1.2, kappa: 0.3 * 12, theta: 2.5, sigma: 0.4 * Math.sqrt(12) };
 let mercadoOU = null; // { datos, cal } cuando hay una serie cargada
@@ -160,26 +160,20 @@ MODULOS.ou = {
   dibujar: simularYDibujarOU,
   conectar() {
     fijarParametrosOU(EJEMPLO_OU);
-    conectarFormularioDatos("ou", (datos) => {
+    registrarDatos("ou", (datos) => {
       const cal = calibrarOU(datos.precios);
       mercadoOU = { datos, cal };
       fijarParametrosOU(cal, cal.minimo, cal.maximo);
       mostrarCalibracionOU();
       simularYDibujarOU();
-    });
-    // atajos: las dos series del módulo (VIX y TRM)
-    document.querySelectorAll("#ou-form [data-ticker]").forEach((b) => {
-      b.addEventListener("click", () => {
-        $("ou-ticker").value = b.dataset.ticker;
-        $("ou-form").requestSubmit();
-      });
-    });
-    $("ou-ejemplo").addEventListener("click", () => {
+      const aviso = avisoOU(datos); // se puede usar cualquier serie, pero un precio lleva aviso
+      $("ou-aviso").textContent = aviso || "";
+      $("ou-aviso").hidden = !aviso;
+    }, () => {
       mercadoOU = null;
+      $("ou-aviso").hidden = true;
       $("ou-calibracion").hidden = true;
-      $("ou-estado").className = "estado";
-      $("ou-estado").textContent = "Ejercicio 3 del taller: liquidez en millones de USD.";
-      modoSustentacionOU();
+      modoSustentacionOU(); // vuelve al ejercicio 3 del taller
     });
     for (const id of ["ou-kappa", "ou-theta", "ou-sigma", "ou-dias", "ou-n"]) {
       $(id).addEventListener("input", simularYDibujarOU);

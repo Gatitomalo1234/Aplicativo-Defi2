@@ -151,10 +151,14 @@ MODULOS.merton = {
     if (mercadoMerton) mostrarCalibracionMerton(); // el histograma se redibuja al ancho actual
   },
   conectar() {
-    conectarFormularioDatos("merton", (datos) => {
+    registrarDatos("merton", (datos) => {
       mercadoMerton = { datos, cal: null };
       $("merton-umbral-caja").hidden = false;
       calibrarYFijarMerton();
+    }, () => {
+      mercadoMerton = null;
+      $("merton-calib-tarjeta").hidden = true;
+      modoSustentacionMerton(); // parámetros de ejemplo (λ = 0) y semilla 2026
     });
     for (const id of CONTROLES_MERTON) {
       $(`merton-${id}`).addEventListener("input", simularYDibujarMerton);

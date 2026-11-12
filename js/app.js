@@ -6,7 +6,7 @@
 const MODULOS = {};
 
 // ---- navegación por hash ----
-const SECCIONES = ["inicio", "gbm", "merton", "ou", "fbm", "manada", "opciones", "comparacion"];
+const SECCIONES = ["inicio", "datos", "gbm", "merton", "ou", "fbm", "manada", "opciones", "comparacion"];
 
 function seccionActual() {
   const id = location.hash.replace("#", "") || "inicio";
@@ -79,8 +79,9 @@ function resumenCalidad(datos) {
     ? `${totalDescartes} descartados (${d.duplicados} fechas repetidas, ${d.faltantes} faltantes, ` +
       `${d.no_positivos} no positivos)`
     : "ningún dato descartado";
+  const versiones = c.versiones ? ` · yfinance ${c.versiones.yfinance}, pandas ${c.versiones.pandas}` : "";
   return `${c.n_validos} precios válidos de ${c.n_recibidos} recibidos · ${detalle} · ` +
-    `consultado ${c.consultado} · yfinance ${c.versiones.yfinance}, pandas ${c.versiones.pandas}`;
+    `consultado ${c.consultado}${versiones}`;
 }
 
 // encabezado común de los paneles de calibración: serie, fuente y calidad
@@ -90,40 +91,102 @@ function encabezadoDatos(datos) {
        <small>${resumenCalidad(datos)}</small></p>`;
 }
 
-// Formulario "Datos de mercado" de un módulo. Espera en el HTML los ids
-// <prefijo>-form, -ticker, -desde, -hasta, -cargar y -estado.
-// alCargar(datos) calibra y dibuja; si lanza un error, se muestra en el estado.
-function conectarFormularioDatos(prefijo, alCargar) {
-  $(`${prefijo}-desde`).value = haceAnios(3);
-  $(`${prefijo}-hasta`).value = fechaISO(new Date());
-  $(`${prefijo}-form`).addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const ticker = $(`${prefijo}-ticker`).value.trim();
-    const estado = $(`${prefijo}-estado`);
-    const boton = $(`${prefijo}-cargar`);
+// ---- serie en uso de cada módulo (los datos se eligen en «Toma de datos») ----
+// Cada módulo registra cómo calibrarse con una serie: registrarDatos(prefijo, alCargar).
+// La elección se recuerda en el navegador (localStorage): al reabrir la página, cada
+// módulo vuelve a cargar su serie desde la copia guardada en datos/cache/, sin internet.
+const CARGADORES = {};      // prefijo -> alCargar(datos)
+const SOLTADORES = {};      // prefijo -> alSoltar(): vuelve a los parámetros de ejemplo
+const SERIES_EN_USO = {};   // prefijo -> datos de la serie que está usando
+const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm" };
+const CLAVE_SELECCION = "romper-mercado.series-en-uso";
+
+function leerSeleccion() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_SELECCION)) || {}; } catch { return {}; }
+}
+function guardarSeleccion(prefijo, archivo) {
+  try {
+    const sel = leerSeleccion();
+    if (archivo) sel[prefijo] = archivo; else delete sel[prefijo];
+    localStorage.setItem(CLAVE_SELECCION, JSON.stringify(sel));
+  } catch { /* navegador sin almacenamiento: la elección dura solo esta sesión */ }
+}
+
+function registrarDatos(prefijo, alCargar, alSoltar) {
+  CARGADORES[prefijo] = alCargar;
+  SOLTADORES[prefijo] = alSoltar;
+  pintarSerieEnUso(prefijo);
+  const quitar = $(`${prefijo}-quitar`);
+  if (quitar) quitar.addEventListener("click", () => soltarSerie(prefijo));
+}
+
+// línea "Serie: ..." de la tarjeta de datos del módulo
+function pintarSerieEnUso(prefijo) {
+  const caja = $(`${prefijo}-serie`);
+  if (!caja) return;
+  const d = SERIES_EN_USO[prefijo];
+  caja.innerHTML = d
+    ? `<b>${d.ticker}</b><span>${d.fechas[0]} → ${d.fechas[d.fechas.length - 1]}</span>
+       <span>${d.precios.length} precios</span><span>${d.fuente}</span>`
+    : `<b>Sin serie</b><span>el simulador usa parámetros de ejemplo</span>`;
+  const quitar = $(`${prefijo}-quitar`);
+  if (quitar) quitar.hidden = !d;
+}
+
+// Manda una serie a un módulo: calibra, dibuja y recuerda la elección.
+function usarSerieEn(prefijo, datos, { restaurada = false } = {}) {
+  const estado = $(`${prefijo}-estado`);
+  if (datos.precios.length < MINIMO_CALIBRAR) {
+    throw new Error(`${datos.ticker} tiene ${datos.precios.length} precios; para calibrar se necesitan al menos ${MINIMO_CALIBRAR}.`);
+  }
+  semillaActual = SEMILLA_BASE;
+  CARGADORES[prefijo](datos); // si la calibración falla, lanza el error y no se guarda nada
+  SERIES_EN_USO[prefijo] = datos;
+  if (datos.archivo) guardarSeleccion(prefijo, datos.archivo);
+  pintarSerieEnUso(prefijo);
+  refrescarRiel();
+  actualizarRangos();
+  estado.className = datos.aviso ? "estado aviso" : "estado";
+  estado.textContent = datos.aviso
+    ? datos.aviso
+    : restaurada
+      ? `Serie restaurada desde la copia guardada (consultada ${datos.calidad?.consultado || "antes"}). Sliders en los valores calibrados.`
+      : `Serie cargada desde Toma de datos. Los sliders quedaron en los valores calibrados; muévelos para ver qué cambia.`;
+}
+
+// Deja de usar la serie: el módulo vuelve a los parámetros de ejemplo
+// (OU: el ejercicio del taller) y la elección se olvida.
+function soltarSerie(prefijo) {
+  delete SERIES_EN_USO[prefijo];
+  guardarSeleccion(prefijo, null);
+  semillaActual = SEMILLA_BASE;
+  if (SOLTADORES[prefijo]) SOLTADORES[prefijo]();
+  pintarSerieEnUso(prefijo);
+  refrescarRiel();
+  actualizarRangos();
+  const estado = $(`${prefijo}-estado`);
+  if (estado) {
     estado.className = "estado";
-    estado.textContent = `Descargando ${ticker.toUpperCase()} desde Yahoo Finance…`;
-    boton.disabled = true;
+    estado.textContent = prefijo === "ou"
+      ? "Sin serie: volvió al ejercicio 3 del taller (liquidez en millones de USD)."
+      : "Sin serie: el simulador volvió a los parámetros de ejemplo.";
+  }
+}
+
+// Al abrir la página: cada módulo recupera la serie que tenía elegida.
+async function restaurarSelecciones() {
+  for (const [prefijo, archivo] of Object.entries(leerSeleccion())) {
+    if (!CARGADORES[prefijo]) continue;
     try {
-      const datos = await cargarHistorico(
-        ticker, $(`${prefijo}-desde`).value, $(`${prefijo}-hasta`).value
-      );
-      semillaActual = SEMILLA_BASE;
-      alCargar(datos);
-      refrescarRiel();
-      actualizarRangos();
-      estado.className = datos.aviso ? "estado aviso" : "estado";
-      estado.textContent = datos.aviso
-        ? datos.aviso
-        : `${datos.precios.length} precios de cierre cargados. Los sliders quedaron en los ` +
-          `valores calibrados; muévelos para ver qué cambia.`;
+      usarSerieEn(prefijo, await cargarGuardado(archivo), { restaurada: true });
     } catch (e) {
-      estado.className = "estado error";
-      estado.textContent = e.message;
-    } finally {
-      boton.disabled = false;
+      guardarSeleccion(prefijo, null); // la copia ya no existe o no hay servidor
+      const estado = $(`${prefijo}-estado`);
+      if (estado) { estado.className = "estado aviso"; estado.textContent = `No se pudo restaurar la serie anterior: ${e.message}`; }
     }
-  });
+  }
+  const m = MODULOS[seccionActual()];
+  if (m) m.dibujar();
 }
 
 // lectura común del abanico: solo números que salen de la simulación misma
@@ -256,13 +319,17 @@ function modoSustentacionGBM() {
 MODULOS.gbm = {
   dibujar: simularYDibujarGBM,
   conectar() {
-    conectarFormularioDatos("gbm", (datos) => {
+    registrarDatos("gbm", (datos) => {
       const cal = calibrarGBM(datos.precios);
       mercadoGBM = { datos, cal };
       fijarSlider("gbm-mu", cal.mu);
       fijarSlider("gbm-sigma", cal.sigma);
       mostrarCalibracionGBM(mercadoGBM);
       simularYDibujarGBM();
+    }, () => {
+      mercadoGBM = null;
+      $("gbm-calibracion").hidden = true;
+      modoSustentacionGBM(); // parámetros de ejemplo y semilla 2026
     });
     for (const id of ["gbm-mu", "gbm-sigma", "gbm-dias", "gbm-n"]) {
       $(id).addEventListener("input", simularYDibujarGBM);
@@ -280,6 +347,7 @@ MODULOS.gbm = {
 // cargaron todos los módulos (también los que están en otros archivos).
 document.addEventListener("DOMContentLoaded", () => {
   for (const m of Object.values(MODULOS)) m.conectar();
+  restaurarSelecciones();
   window.addEventListener("hashchange", mostrarSeccion);
   document.querySelectorAll("#riel button").forEach((b) => {
     b.addEventListener("click", () => {

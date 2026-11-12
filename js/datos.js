@@ -1,5 +1,6 @@
 // datos.js — trae precios reales desde servidor.py (que los baja de Yahoo
-// Finance) y calibra los parámetros con el mismo método del taller de valoración.
+// Finance o los lee de las copias guardadas), lee y exporta CSV, y calibra los
+// parámetros de cada modelo con el método del taller de valoración.
 
 const DIAS_HABILES = 252;
 
@@ -14,31 +15,130 @@ function haceAnios(n) {
   return fechaISO(d);
 }
 
-async function cargarHistorico(ticker, desde, hasta) {
+// ---- conversación con servidor.py ----
+// Todas las peticiones pasan por aquí: si el aplicativo se abrió sin el servidor
+// (doble clic en index.html) o el servidor se cayó, el mensaje lo dice.
+async function pedir(url, opciones) {
   if (location.protocol === "file:") {
     throw new Error(
-      "Para traer datos de Yahoo Finance hay que abrir el aplicativo con el servidor: " +
+      "Para traer o guardar datos hay que abrir el aplicativo con el servidor: " +
         "en la carpeta del aplicativo corre  python servidor.py"
     );
   }
-  const url =
-    `/api/historico?ticker=${encodeURIComponent(ticker)}` +
-    `&desde=${desde}&hasta=${hasta}`;
   let respuesta;
   try {
-    respuesta = await fetch(url);
+    respuesta = await fetch(url, opciones);
   } catch (e) {
     throw new Error("El servidor no responde. Revisa que  python servidor.py  siga corriendo.");
   }
   const datos = await respuesta.json();
   if (!respuesta.ok) throw new Error(datos.error);
-  if (datos.precios.length < 30) {
-    throw new Error(
-      `Solo hay ${datos.precios.length} precios en ese rango; ` +
-        `se necesitan al menos 30 para calibrar.`
-    );
-  }
   return datos;
+}
+
+// Baja una serie de Yahoo Finance (el servidor la guarda en datos/cache/).
+const cargarHistorico = (ticker, desde, hasta) =>
+  pedir(`/api/historico?ticker=${encodeURIComponent(ticker)}&desde=${desde}&hasta=${hasta}`);
+
+// Series guardadas en el computador (datos/cache/): se abren sin internet.
+const listarGuardados = () => pedir("/api/guardados").then((r) => r.series);
+const cargarGuardado = (archivo) => pedir(`/api/guardado?archivo=${encodeURIComponent(archivo)}`);
+const borrarGuardado = (archivo) => pedir("/api/borrar", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ archivo }),
+});
+
+// ¿Nivel o precio? Solo para avisar en OU, que modela un nivel que vuelve a un
+// equilibrio. Regla por ticker: índices de volatilidad, tasas y tipos de cambio son
+// niveles; lo demás se toma como precio. Un CSV propio no trae ticker: "desconocido".
+const NIVELES_CONOCIDOS = /^\^(VIX|VXN|VVIX|VXD|RVX|TNX|IRX|FVX|TYX)$|=X$/;
+function tipoDeSerie(datos) {
+  if (/CSV/.test(datos.fuente || "")) return "desconocido";
+  return NIVELES_CONOCIDOS.test(datos.ticker) ? "nivel" : "precio";
+}
+
+// aviso para OU cuando la serie es (o puede ser) un precio; null si es un nivel
+function avisoOU(datos) {
+  const tipo = tipoDeSerie(datos);
+  if (tipo === "nivel") return null;
+  const base = "OU modela un nivel que vuelve a un equilibrio (el VIX, una tasa, un tipo de cambio). " +
+    "Un precio no tiene un equilibrio al cual volver, así que κ̂, θ̂ y la vida media se deben leer con cuidado.";
+  return tipo === "precio"
+    ? `Ojo: ${datos.ticker} parece el precio de un activo. ${base}`
+    : `Ojo: ${datos.ticker} es un CSV propio. Si es un precio y no un nivel: ${base}`;
+}
+
+// Mínimo de precios para calibrar un modelo (la vista rápida acepta menos).
+const MINIMO_CALIBRAR = 30;
+
+// ---- CSV propio (regla del taller: respaldo si la descarga falla) ----
+// Acepta lo que exporta este aplicativo, Yahoo o Excel: separador "," o ";",
+// líneas de comentario con "#", fechas AAAA-MM-DD o DD/MM/AAAA. Columna de precio:
+// la primera que se llame Adj Close, Close, cierre, precio o price; si no, la segunda.
+function leerCSV(texto) {
+  const lineas = texto.replace(/^\uFEFF/, "").split(/\r?\n/)
+    .map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  if (lineas.length < 3) throw new Error("El CSV debe tener un encabezado y al menos dos filas.");
+  const sep = (lineas[0].match(/;/g) || []).length > (lineas[0].match(/,/g) || []).length ? ";" : ",";
+  const celdas = (l) => l.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+  const cab = celdas(lineas[0]).map((c) => c.toLowerCase());
+  const iFecha = cab.findIndex((c) => /fecha|date/.test(c));
+  if (iFecha === -1) throw new Error("No encontré una columna de fecha (se llame «fecha» o «date»).");
+  let iPrecio = -1;
+  for (const nombre of ["adj close", "cierre_ajustado", "close", "cierre", "precio", "price", "valor"]) {
+    iPrecio = cab.findIndex((c) => c === nombre || c.startsWith(nombre));
+    if (iPrecio !== -1) break;
+  }
+  if (iPrecio === -1) iPrecio = iFecha === 0 ? 1 : 0;
+  const fechas = [], precios = [];
+  for (const l of lineas.slice(1)) {
+    const c = celdas(l);
+    let f = c[iFecha] || "";
+    const dmy = f.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dmy) f = `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+    f = f.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) throw new Error(`Fecha que no entiendo: «${c[iFecha]}».`);
+    let v = (c[iPrecio] || "").replace(/\s/g, "");
+    if (sep === ";") v = v.replace(/\./g, "").replace(",", "."); // 1.234,56 -> 1234.56
+    const x = parseFloat(v);
+    fechas.push(f);
+    precios.push(Number.isFinite(x) ? x : null); // faltante: el servidor lo descarta y lo reporta
+  }
+  return { fechas, precios, columna: cab[iPrecio] };
+}
+
+// El servidor limpia la serie con las reglas del taller y la guarda con su procedencia.
+const importarSerie = (nombre, archivoOriginal, { fechas, precios }) =>
+  pedir("/api/importar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, archivo_original: archivoOriginal, fechas, precios }),
+  });
+
+// Exporta la serie a un CSV en el computador, con la procedencia en el encabezado
+// (líneas con #: pandas las ignora con read_csv(..., comment="#")).
+function exportarCSV(datos) {
+  const c = datos.calidad || {};
+  const d = c.descartes;
+  const cabecera = [
+    "# Romper el mercado perfecto — serie exportada desde «Toma de datos»",
+    `# serie: ${datos.ticker}`,
+    `# fuente: ${datos.fuente}${/Yahoo/.test(datos.fuente) ? " (cierre ajustado por dividendos y splits, auto_adjust=True)" : ""}`,
+    `# consultado: ${c.consultado || "sin dato"}`,
+    c.versiones ? `# versiones: yfinance ${c.versiones.yfinance}, pandas ${c.versiones.pandas}` : null,
+    c.n_validos !== undefined
+      ? `# precios válidos: ${c.n_validos} de ${c.n_recibidos}; descartados: ${d.duplicados} fechas repetidas, ${d.faltantes} faltantes, ${d.no_positivos} no positivos`
+      : null,
+    "fecha,precio",
+  ].filter(Boolean);
+  const filas = datos.fechas.map((f, i) => `${f},${datos.precios[i]}`);
+  const blob = new Blob([cabecera.concat(filas).join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${datos.ticker.replace(/^\^/, "").replace(/[^A-Za-z0-9_-]/g, "_")}_${datos.fechas[0]}_${datos.fechas[datos.fechas.length - 1]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 // Log-retornos diarios: r_t = ln(S_t / S_{t-1})
