@@ -1,9 +1,10 @@
 // modelos.js — los cinco modelos del semestre con la misma interfaz:
 //   simularX(params, Z) -> arreglo de trayectorias (Float64Array de nPasos+1)
+// (manada no se simula: se mide sobre datos reales, ver manada.js)
 // dt = 1/252. Z son las normales comunes de ruido.js (mismo ruido para todos).
 //
 // Esquema numérico:
-// - Modelos de PRECIO (GBM, Merton, fBm, manada): transición exacta en logaritmos,
+// - Modelos de PRECIO (GBM, Merton, fBm): transición exacta en logaritmos,
 //   como en el taller de valoración: S(t+dt) = S(t) · exp[(mu - sigma²/2)dt + sigma·√dt·Z].
 //   Garantiza precios positivos con cualquier parámetro (Euler sobre S no: con
 //   volatilidad alta puede dar precios negativos).
@@ -170,39 +171,5 @@ function simularFBM({ s0, mu, sigma, H }, Z) {
   });
 }
 
-// 5. Comportamiento en manada — Kirman (1993) (rompe la independencia de agentes)
-//    N agentes son optimistas (compran) o pesimistas (venden). Cada dia, cada
-//    agente puede cambiar de opinion solo (prob eps) o por imitar a otro agente
-//    elegido al azar (prob delta * fraccion del bando contrario).
-//    El sentimiento m = 2k/N - 1 empuja el retorno: con delta alto aparecen
-//    burbujas y caidas ENDOGENAS, sin ninguna noticia externa.
-//    Precio con la misma transición exacta del GBM, con tendencia beta*m.
-//    (Alternativa pendiente de decidir: modelo de umbral de imitacion.)
-function simularManada(
-  { s0, nAgentes, eps, delta, beta, sigma, semillaAgentes = 555 },
-  Z
-) {
-  const difusion = sigma * Math.sqrt(DT);
-  return Z.map((z, idx) => {
-    const u = crearGenerador(semillaAgentes + idx);
-    const n = z.length;
-    const S = new Float64Array(n + 1);
-    const M = new Float64Array(n + 1); // sentimiento, por si queremos graficarlo
-    S[0] = s0;
-    let k = Math.round(nAgentes / 2); // arranque neutral
-    for (let j = 0; j < n; j++) {
-      // nAgentes micro-actualizaciones por dia (siempre 2 uniformes por paso:
-      // el azar consumido no depende de los parámetros)
-      for (let a = 0; a < nAgentes; a++) {
-        const optimista = u() < k / nAgentes;
-        const pCambio = eps + delta * (optimista ? (nAgentes - k) / nAgentes : k / nAgentes);
-        if (u() < pCambio) k += optimista ? -1 : 1;
-      }
-      const m = (2 * k) / nAgentes - 1;
-      M[j + 1] = m;
-      S[j + 1] = S[j] * Math.exp((beta * m - (sigma * sigma) / 2) * DT + difusion * z[j]);
-    }
-    S.sentimiento = M;
-    return S;
-  });
-}
+// 5. Comportamiento en manada: no es un modelo de simulación en este aplicativo.
+//    Se mide con CSSD y CSAD sobre datos reales (ver datos.js y manada.js).

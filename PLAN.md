@@ -28,7 +28,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 | Merton | trayectorias continuas | saltos: noticias, earnings, crashes |
 | Ornstein-Uhlenbeck | drift constante | reversión a la media: tasas, spreads |
 | Browniano fraccional | incrementos independientes | memoria: momentum / sobre-reacción |
-| Manada (Kirman) | agentes independientes | imitación: GameStop, subprime |
+| Manada (CSAD, CSSD) | agentes independientes | imitación: GameStop, subprime |
 | Opciones reales | ninguno: usa los modelos para decidir | valor de la flexibilidad en proyectos |
 
 ## Convenciones (lo que nos hace defendibles)
@@ -60,6 +60,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `js/ou.js` — módulo de Ornstein-Uhlenbeck
 - `js/fbm.js` — módulo del browniano fraccional
+- `js/manada.js` — módulo de manada (CSAD/CSSD) y canastas recomendadas
 - `js/tomadatos.js` — sección Toma de datos: series por modelo, guardadas, CSV propio, vista rápida
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
 - `datos/cache/` — se crea solo al descargar
@@ -85,7 +86,9 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
   2^(2H−1) − 1 en la lectura. Ĥ por escalamiento de la varianza (bloques de k días,
   regresión log-log) con gráfico. Precisión documentada: sesgo −0.02/−0.03, ±0.05 con
   3 años. Resultados: NVDA 0.48, S&P 10 años 0.41, VIX 10 años 0.37.
-- **F5**: Manada (Kirman: ε cambio propio, δ imitación; GameStop 2021 y S&P 2007-09)
+- **F5 — hecho (11 nov), en revisión**: Manada con CSAD y CSSD (forma estándar) sobre canastas
+  reales (meme 2020-21, bancos 2006-09, tecnológicas); ventana de fechas, cola de CSSD,
+  errores Newey-West. Sin simulación.
 - **F6**: Opciones reales (propuesta, por confirmar con lo visto en clase):
   - árbol binomial CRR del curso aplicado al valor del proyecto
   - σ del proyecto tomada de una empresa comparable en Yahoo Finance
@@ -99,5 +102,3 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 ## Decisiones pendientes
 
 - Opciones reales: qué método y qué tipos de opción vio el profe en clase.
-- Manada: Kirman (paper 1993, citable) vs umbral de imitación (más intuitivo).
-  El simulador en `modelos.js` ya trae Kirman; es intercambiable.

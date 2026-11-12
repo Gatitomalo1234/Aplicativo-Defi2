@@ -299,3 +299,125 @@ function calibrarFBM(precios) {
     s0: precios[precios.length - 1], nRetornos: n, media,
   };
 }
+
+// ================= Comportamiento en manada: CSSD y CSAD =================
+// Son métricas sobre una canasta de N acciones, no un modelo estocástico.
+//   R_i,t = log-retorno de la acción i el día t;  R_m,t = promedio simple de los N (mercado
+//   de la canasta, como en Chang, Cheng y Khorana, 2000).
+//   CSSD_t = √[ Σ (R_i,t − R_m,t)² / (N − 1) ]      Christie y Huang (1995)
+//   CSAD_t = (1/N) Σ |R_i,t − R_m,t|                 Chang, Cheng y Khorana (2000)
+
+// Alinea las series de la canasta: solo los días en que todas tienen precio.
+function alinearCanasta(series) {
+  const mapas = series.map((s) => new Map(s.fechas.map((f, i) => [f, s.precios[i]])));
+  const comunes = series[0].fechas.filter((f) => mapas.every((m) => m.has(f)));
+  if (comunes.length < 3) throw new Error("Las acciones de la canasta casi no tienen días en común.");
+  const retornos = mapas.map((m) => {
+    const r = new Float64Array(comunes.length - 1);
+    for (let t = 1; t < comunes.length; t++) r[t - 1] = Math.log(m.get(comunes[t]) / m.get(comunes[t - 1]));
+    return r;
+  });
+  const T = comunes.length - 1, N = series.length;
+  const rm = new Float64Array(T), csad = new Float64Array(T), cssd = new Float64Array(T);
+  for (let t = 0; t < T; t++) {
+    let s = 0;
+    for (let i = 0; i < N; i++) s += retornos[i][t];
+    rm[t] = s / N;
+    let abs = 0, cuad = 0;
+    for (let i = 0; i < N; i++) {
+      const d = retornos[i][t] - rm[t];
+      abs += Math.abs(d);
+      cuad += d * d;
+    }
+    csad[t] = abs / N;
+    cssd[t] = Math.sqrt(cuad / (N - 1));
+  }
+  return {
+    tickers: series.map((s) => s.ticker), N, T,
+    fechas: comunes.slice(1), // fecha de cada retorno
+    rm, csad, cssd,
+    diasPorSerie: series.map((s) => s.fechas.length), diasComunes: comunes.length,
+  };
+}
+
+// Inversa de una matriz pequeña (Gauss-Jordan).
+function inversa(A) {
+  const n = A.length;
+  const M = A.map((fila, i) => [...fila, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let f = c + 1; f < n; f++) if (Math.abs(M[f][c]) > Math.abs(M[p][c])) p = f;
+    if (Math.abs(M[p][c]) < 1e-14) throw new Error("La regresión no tiene solución única (columnas repetidas o vacías).");
+    [M[c], M[p]] = [M[p], M[c]];
+    const piv = M[c][c];
+    for (let j = 0; j < 2 * n; j++) M[c][j] /= piv;
+    for (let f = 0; f < n; f++) {
+      if (f === c) continue;
+      const k = M[f][c];
+      for (let j = 0; j < 2 * n; j++) M[f][j] -= k * M[c][j];
+    }
+  }
+  return M.map((fila) => fila.slice(n));
+}
+
+// Mínimos cuadrados con errores estándar de Newey-West (HAC): corrigen la
+// autocorrelación y la heterocedasticidad de los residuos, como en la literatura.
+// Rezagos: L = ⌊4·(T/100)^(2/9)⌋, con pesos de Bartlett 1 − l/(L+1).
+function regresionNW(X, y) {
+  const T = y.length, k = X[0].length;
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0));
+  const Xty = new Array(k).fill(0);
+  for (let t = 0; t < T; t++) {
+    for (let a = 0; a < k; a++) {
+      Xty[a] += X[t][a] * y[t];
+      for (let b = 0; b < k; b++) XtX[a][b] += X[t][a] * X[t][b];
+    }
+  }
+  const inv = inversa(XtX);
+  const beta = inv.map((fila) => fila.reduce((s, v, j) => s + v * Xty[j], 0));
+  const e = y.map((v, t) => v - X[t].reduce((s, x, j) => s + x * beta[j], 0));
+  const L = Math.floor(4 * Math.pow(T / 100, 2 / 9));
+  const S = Array.from({ length: k }, () => new Array(k).fill(0));
+  for (let l = 0; l <= L; l++) {
+    const w = l === 0 ? 1 : 1 - l / (L + 1);
+    for (let t = l; t < T; t++) {
+      const f = e[t] * e[t - l] * w;
+      for (let a = 0; a < k; a++) {
+        for (let b = 0; b < k; b++) {
+          S[a][b] += f * (X[t][a] * X[t - l][b] + (l === 0 ? 0 : X[t - l][a] * X[t][b]));
+        }
+      }
+    }
+  }
+  const mul = (A, B) => A.map((fila) => B[0].map((_, j) => fila.reduce((s, v, i) => s + v * B[i][j], 0)));
+  const V = mul(mul(inv, S), inv);
+  const se = V.map((fila, i) => Math.sqrt(Math.max(fila[i], 0)));
+  const t = beta.map((b, i) => b / se[i]);
+  const p = t.map((x) => 2 * (1 - normalAcumulada(Math.abs(x))));
+  const media = y.reduce((s, v) => s + v, 0) / T;
+  const sst = y.reduce((s, v) => s + (v - media) ** 2, 0);
+  const sse = e.reduce((s, v) => s + v * v, 0);
+  return { beta, se, t, p, r2: 1 - sse / sst, T, L };
+}
+
+// Regresiones en la ventana [inicio, fin] (índices de días) de la canasta alineada.
+//   CSAD: CSAD_t = α + γ1·|R_m,t| + γ2·R_m,t² + ε   → manada si γ2 < 0 y significativo
+//   CSSD: CSSD_t = α + β_L·D_L + β_U·D_U + ε        → manada si β_L o β_U < 0 y significativos
+//         D_L = 1 los días en la cola baja de R_m (percentil «cola»), D_U en la alta.
+const DIAS_MIN_MANADA = 30;
+function calibrarManada(c, { inicio = 0, fin = c.T - 1, cola = 0.05 } = {}) {
+  const idx = [];
+  for (let t = inicio; t <= fin; t++) idx.push(t);
+  if (idx.length < DIAS_MIN_MANADA) throw new Error(`La ventana tiene ${idx.length} días; se necesitan al menos ${DIAS_MIN_MANADA}.`);
+  const rm = idx.map((t) => c.rm[t]);
+  const csad = regresionNW(idx.map((t) => [1, Math.abs(c.rm[t]), c.rm[t] ** 2]), idx.map((t) => c.csad[t]));
+  const ordenado = [...rm].sort((a, b) => a - b);
+  const qBaja = percentil(ordenado, cola), qAlta = percentil(ordenado, 1 - cola);
+  const DL = rm.map((r) => (r <= qBaja ? 1 : 0)), DU = rm.map((r) => (r >= qAlta ? 1 : 0));
+  const cssd = regresionNW(idx.map((t, j) => [1, DL[j], DU[j]]), idx.map((t) => c.cssd[t]));
+  return {
+    inicio, fin, cola, dias: idx.length, csad, cssd, qBaja, qAlta,
+    nBaja: DL.reduce((s, v) => s + v, 0), nAlta: DU.reduce((s, v) => s + v, 0),
+    extremos: new Set(idx.filter((t, j) => DL[j] || DU[j])),
+  };
+}

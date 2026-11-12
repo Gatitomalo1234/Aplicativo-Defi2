@@ -413,7 +413,8 @@ function dibujarLogLog(canvas, puntos, ajuste) {
 }
 
 // Línea de precio en el tiempo (sección «Toma de datos»), con hover: fecha y valor.
-function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), hoverIndice = null) {
+// opciones: { sombra: [i0, i1] -> franja resaltada (ventana), marcas: Set de índices -> puntos }
+function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), hoverIndice = null, opciones = {}) {
   if (!canvas.clientWidth) return;
   const dpr = window.devicePixelRatio || 1;
   const ancho = canvas.clientWidth, alto = canvas.clientHeight;
@@ -430,7 +431,9 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
   const n = valores.length;
   let yMin = Math.min(...valores), yMax = Math.max(...valores);
   const holgura = (yMax - yMin) * 0.08 || 1;
+  const positivos = yMin >= 0;
   yMin -= holgura; yMax += holgura;
+  if (positivos) yMin = Math.max(0, yMin); // una serie positiva (precio, CSAD) no muestra eje negativo
   const px = (i) => margen.izq + (i / Math.max(n - 1, 1)) * W;
   const py = (v) => margen.arr + (1 - (v - yMin) / (yMax - yMin)) * H;
 
@@ -449,6 +452,13 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
     ctx.textAlign = al; ctx.fillText(fechas[i], px(i), alto - margen.aba + 7);
   });
 
+  // franja de la ventana elegida
+  if (opciones.sombra) {
+    const [a, b] = opciones.sombra;
+    ctx.fillStyle = "rgba(61, 111, 230, 0.08)";
+    ctx.fillRect(px(a), margen.arr, Math.max(px(b) - px(a), 1), H);
+  }
+
   // área suave bajo la línea y la línea
   const grad = ctx.createLinearGradient(0, margen.arr, 0, margen.arr + H);
   grad.addColorStop(0, "rgba(61, 111, 230, 0.18)");
@@ -459,7 +469,15 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
   ctx.fillStyle = grad; ctx.fill();
   ctx.beginPath(); ctx.moveTo(px(0), py(valores[0]));
   for (let i = 1; i < n; i++) ctx.lineTo(px(i), py(valores[i]));
-  ctx.strokeStyle = ESTILO_GRAFICO.historico; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = ESTILO_GRAFICO.historico; ctx.lineWidth = opciones.sombra ? 1.2 : 1.5; ctx.stroke();
+
+  // puntos en días especiales (manada: días extremos de la prueba CSSD)
+  if (opciones.marcas) {
+    ctx.fillStyle = ESTILO_GRAFICO.marca;
+    for (const i of opciones.marcas) {
+      ctx.beginPath(); ctx.arc(px(i), py(valores[i]), 2.6, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
 
   // hover
   if (hoverIndice !== null && hoverIndice >= 0 && hoverIndice < n) {
@@ -477,18 +495,98 @@ function dibujarLinea(canvas, fechas, valores, formato = (v) => v.toFixed(2), ho
     ctx.fillText(texto, tx + 6, margen.arr + 12);
   }
 
-  canvas._linea = { fechas, valores, formato, margen, W, n };
+  canvas._linea = { fechas, valores, formato, margen, W, n, opciones };
   if (!canvas._hoverLinea) {
     canvas._hoverLinea = true;
     canvas.addEventListener("mousemove", (ev) => {
       const e = canvas._linea;
       const x = ev.clientX - canvas.getBoundingClientRect().left;
       const i = Math.round(((x - e.margen.izq) / e.W) * (e.n - 1));
-      dibujarLinea(canvas, e.fechas, e.valores, e.formato, i);
+      dibujarLinea(canvas, e.fechas, e.valores, e.formato, i, e.opciones);
     });
     canvas.addEventListener("mouseleave", () => {
       const e = canvas._linea;
-      dibujarLinea(canvas, e.fechas, e.valores, e.formato);
+      dibujarLinea(canvas, e.fechas, e.valores, e.formato, null, e.opciones);
     });
   }
+}
+
+// Manada: CSAD de cada día contra el retorno del mercado de la canasta (la figura
+// clásica de Chang, Cheng y Khorana). Curva = ajuste α + γ1|R_m| + γ2·R_m²; punteada =
+// la misma sin el término γ2 (lo que daría la dispersión sin curvatura).
+// x, y: arreglos de la ventana; beta: [α, γ1, γ2]; extremos: arreglo de booleanos.
+function dibujarDispersionCSAD(canvas, x, y, beta, extremos) {
+  if (!canvas.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = canvas.clientWidth, alto = canvas.clientHeight;
+  canvas.width = ancho * dpr;
+  canvas.height = alto * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  ctx.font = ESTILO_GRAFICO.fuente;
+
+  const margen = { izq: 58, der: 14, arr: 26, aba: 30 };
+  const W = ancho - margen.izq - margen.der;
+  const H = alto - margen.arr - margen.aba;
+  const xMax = Math.max(...x.map(Math.abs)) * 1.05 || 0.01;
+  const curva = (r) => beta[0] + beta[1] * Math.abs(r) + beta[2] * r * r;
+  const lineal = (r) => beta[0] + beta[1] * Math.abs(r);
+  let yMax = Math.max(...y, curva(xMax), curva(-xMax), lineal(xMax)) * 1.08;
+  const yMin = 0;
+  const px = (r) => margen.izq + ((r + xMax) / (2 * xMax)) * W;
+  const py = (v) => margen.arr + (1 - (v - yMin) / (yMax - yMin)) * H;
+
+  // rejilla y ejes (en %)
+  ctx.lineWidth = 1;
+  for (let g = 0; g <= 4; g++) {
+    const v = yMin + ((yMax - yMin) * g) / 4;
+    ctx.strokeStyle = ESTILO_GRAFICO.rejilla;
+    ctx.beginPath(); ctx.moveTo(margen.izq, py(v)); ctx.lineTo(margen.izq + W, py(v)); ctx.stroke();
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    ctx.font = ESTILO_GRAFICO.fuenteCifras; ctx.fillText(`${(v * 100).toFixed(1)} %`, margen.izq - 6, py(v));
+  }
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const r of [-xMax * 0.9, -xMax * 0.45, 0, xMax * 0.45, xMax * 0.9]) {
+    ctx.fillText(`${(r * 100).toFixed(1)} %`, px(r), margen.arr + H + 6);
+  }
+  ctx.font = ESTILO_GRAFICO.fuente;
+  ctx.fillText("retorno del mercado de la canasta, R_m", margen.izq + W / 2, margen.arr + H + 19);
+
+  // puntos: cada día de la ventana (coral = día extremo de la prueba CSSD)
+  for (let i = 0; i < x.length; i++) {
+    ctx.fillStyle = extremos[i] ? ESTILO_GRAFICO.marca : "rgba(29, 45, 80, 0.35)";
+    ctx.beginPath(); ctx.arc(px(x[i]), py(y[i]), extremos[i] ? 3 : 2.2, 0, 2 * Math.PI); ctx.fill();
+  }
+
+  // curvas
+  const trazar = (f, color, guion, grosor) => {
+    ctx.strokeStyle = color; ctx.lineWidth = grosor; ctx.setLineDash(guion);
+    ctx.beginPath();
+    for (let k = 0; k <= 120; k++) {
+      const r = -xMax + (2 * xMax * k) / 120;
+      k === 0 ? ctx.moveTo(px(r), py(f(r))) : ctx.lineTo(px(r), py(f(r)));
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  ctx.save(); ctx.beginPath(); ctx.rect(margen.izq, margen.arr, W, H); ctx.clip();
+  trazar(lineal, ESTILO_GRAFICO.eje, [5, 4], 1.4);
+  trazar(curva, ESTILO_GRAFICO.mediana, [], 2.2);
+  ctx.restore();
+
+  // leyenda
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  let lx = margen.izq;
+  ctx.fillStyle = "rgba(29, 45, 80, 0.5)"; ctx.beginPath(); ctx.arc(lx + 5, 10, 3, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("un día", lx + 12, 10);
+  lx += 62;
+  ctx.fillStyle = ESTILO_GRAFICO.marca; ctx.beginPath(); ctx.arc(lx + 5, 10, 3, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("día extremo (CSSD)", lx + 12, 10);
+  lx += 132;
+  ctx.fillStyle = ESTILO_GRAFICO.mediana; ctx.fillRect(lx, 9, 14, 2);
+  ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.fillText("ajuste CSAD", lx + 18, 10);
+  lx += 92;
+  ctx.strokeStyle = ESTILO_GRAFICO.eje; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(lx, 10); ctx.lineTo(lx + 14, 10); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText("sin el término γ₂", lx + 18, 10);
 }

@@ -121,6 +121,13 @@
       <label>Hasta <input type="date" id="datos-hasta"></label>
       <button type="submit" id="datos-bajar">Bajar</button>
     </form>
+    <div class="tarjeta-cabeza subcabeza"><h3>Canasta para Manada</h3><span class="nota-cabeza">varios tickers, con las fechas de arriba</span></div>
+    <form class="datos-mercado" id="datos-canasta-form">
+      <label class="ancho-completo">Tickers separados por comas
+        <input type="text" id="datos-canasta-tickers" placeholder="GME, AMC, BB, NOK, KOSS" autocomplete="off" spellcheck="false">
+      </label>
+      <button type="submit" id="datos-canasta-bajar">Bajar canasta y usar en Manada</button>
+    </form>
     <div class="tarjeta-cabeza subcabeza"><h3>O cargar un CSV propio</h3><span class="nota-cabeza">si la descarga falla (regla del taller)</span></div>
     <form class="datos-mercado" id="datos-csv-form">
       <label>Nombre de la serie
@@ -534,25 +541,90 @@
 </section>
 
 <section id="manada" class="tablero" hidden>
-  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
       <p class="eyebrow">Módulo 5 · rompe la independencia de los agentes</p>
       <h1>Comportamiento en <span class="resalte">manada</span></h1>
-      <p class="bajada">Los participantes se imitan.</p>
+      <p class="bajada">¿Las acciones se mueven juntas cuando el mercado está en extremos?</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">CSAD · Chang, Cheng y Khorana (2000)</p>
+      <p class="ecuacion">CSAD<sub>t</sub> = (1/N) Σ |R<sub>i,t</sub> − R<sub>m,t</sub>|<br>
+      CSAD<sub>t</sub> = α + γ<sub>1</sub>|R<sub>m,t</sub>| + γ<sub>2</sub>R<sub>m,t</sub>² + ε<sub>t</sub></p>
+      <p class="etiqueta">CSSD · Christie y Huang (1995)</p>
+      <p class="ecuacion">CSSD<sub>t</sub> = √[ Σ (R<sub>i,t</sub> − R<sub>m,t</sub>)² / (N − 1) ]<br>
+      CSSD<sub>t</sub> = α + β<sub>L</sub>D<sub>L,t</sub> + β<sub>U</sub>D<sub>U,t</sub> + ε<sub>t</sub></p>
     </div>
   </div>
+
   <div class="tarjeta ancho">
-    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
-    <div class="pendiente">
-    <p>Fase 5. Claves del módulo:</p>
-    <ul>
-      <li>Modelo de Kirman (1993): N agentes optimistas/pesimistas; ε cambio propio,
-          δ imitación. Con δ alto aparecen burbujas y caídas endógenas, sin noticias.
-          (Pendiente decidir: Kirman vs modelo de umbral.)</li>
-      <li>GameStop 2021: ningún modelo anterior genera esa forma; el de imitación sí.</li>
-      <li>Subprime 2007-09: la misma lógica contada como imitación institucional.</li>
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">R<sub>i,t</sub></span><div><p>Log-retorno de la acción i el día t. La canasta tiene N acciones.</p></div></li>
+      <li><span class="simbolo">R<sub>m,t</sub></span><div><p>Retorno del «mercado» de la canasta: el promedio simple de los N retornos ese día.</p></div></li>
+      <li><span class="simbolo">CSAD, CSSD</span><div><p>Qué tan dispersos están los retornos frente al mercado ese día: con valor absoluto (CSAD) o con desviación estándar (CSSD).</p></div></li>
+      <li><span class="simbolo">γ<sub>2</sub></span><div><p>Si las acciones reaccionan cada una a su riesgo, la dispersión crece con |R<sub>m</sub>| y γ<sub>2</sub> ≈ 0. Con manada, en días extremos crece menos: γ<sub>2</sub> &lt; 0 y significativo.</p></div></li>
+      <li><span class="simbolo">β<sub>L</sub>, β<sub>U</sub></span><div><p>Cambio de la dispersión en los días de caída extrema (D<sub>L</sub>) y de subida extrema (D<sub>U</sub>). Con manada, negativos y significativos.</p></div></li>
     </ul>
+    <p class="aclaracion">CSAD y CSSD no son modelos estocásticos: son medidas sobre datos reales. No simulan
+    trayectorias; prueban si en una canasta de acciones hubo comportamiento en manada. Los errores
+    estándar son de Newey-West (HAC), como en la literatura.</p>
   </div>
+
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>Canasta de acciones</h2><span class="nota-cabeza">canasta en uso</span></div>
+    <div class="serie-en-uso" id="manada-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="manada">Elegir canasta en Toma de datos</a>
+      <button type="button" class="boton" id="manada-quitar" hidden>Quitar canasta</button>
+    </div>
+    <p class="estado" id="manada-estado" role="status">Sin canasta: elige una en Toma de datos
+    (acciones meme 2020-21, bancos 2006-09 o tecnológicas).</p>
+  </div>
+  <div class="tarjeta col-5 kpi" id="manada-kpi"></div>
+
+  <div class="tarjeta ancho" data-parte="simulador" id="manada-ventana-tarjeta" hidden>
+    <div class="tarjeta-cabeza"><h2>Ventana de fechas</h2><span class="nota-cabeza">las regresiones se recalculan al mover</span></div>
+    <div class="simulador">
+      <div class="controles">
+        <label><span>inicio</span> <output id="manada-inicio-out"></output>
+          <input type="range" id="manada-inicio" min="0" max="1" step="1" value="0">
+        </label>
+        <label><span>fin</span> <output id="manada-fin-out"></output>
+          <input type="range" id="manada-fin" min="0" max="1" step="1" value="1">
+        </label>
+        <label><span>cola extrema (CSSD)</span> <output id="manada-cola-out">5 %</output>
+          <input type="range" id="manada-cola" min="1" max="10" step="1" value="5">
+        </label>
+        <div class="botones" id="manada-atajos"></div>
+        <p class="aclaracion">La cola define los días extremos de CSSD: los de R<sub>m</sub> en el
+        percentil más bajo (D<sub>L</sub>) y más alto (D<sub>U</sub>) de la ventana. Christie y Huang
+        usan 1 % y 5 %.</p>
+      </div>
+      <div class="panel-grafico">
+        <h3 class="sin-margen">CSAD contra el retorno del mercado</h3>
+        <canvas id="manada-dispersion"></canvas>
+        <div class="fichas" id="manada-fichas"></div>
+        <h3>CSAD en el tiempo</h3>
+        <canvas id="manada-tiempo" class="canvas-bajo"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta ancho" data-parte="calibracion" id="manada-resultados" hidden>
+    <div class="tarjeta-cabeza"><h2>Las dos pruebas, paso a paso</h2><span class="nota-cabeza" id="manada-resultados-nota"></span></div>
+    <div class="dos-columnas" id="manada-pruebas"></div>
+  </div>
+
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <p><em>[completar con nuestras palabras: qué significa que las acciones se muevan juntas en días
+    extremos, GameStop 2021 y la crisis subprime]</em></p>
+  </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <p><em>[completar: es una medida, no un modelo de precios; depende de qué acciones entran en la
+    canasta y de la ventana; LSV necesita datos de fondos que no tenemos]</em></p>
   </div>
 </section>
 
@@ -612,6 +684,7 @@
 <script src="js/merton.js"></script>
 <script src="js/ou.js"></script>
 <script src="js/fbm.js"></script>
+<script src="js/manada.js"></script>
 <script src="js/tomadatos.js"></script>
 </body>
 </html>

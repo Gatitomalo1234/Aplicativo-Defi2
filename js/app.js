@@ -98,7 +98,19 @@ function encabezadoDatos(datos) {
 const CARGADORES = {};      // prefijo -> alCargar(datos)
 const SOLTADORES = {};      // prefijo -> alSoltar(): vuelve a los parámetros de ejemplo
 const SERIES_EN_USO = {};   // prefijo -> datos de la serie que está usando
-const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm" };
+const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm" }; // reciben una serie
+const NOMBRE_MANADA = "Manada"; // recibe una canasta (varias series)
+
+// Una canasta es un grupo de series para el módulo de manada.
+function construirCanasta(nombre, series) {
+  return {
+    tipo: "canasta", nombre, ticker: nombre, series,
+    tickers: series.map((s) => s.ticker),
+    archivos: series.map((s) => s.archivo).filter(Boolean),
+  };
+}
+// ¿Esta serie guardada (archivo) la usa el módulo? (serie sola o dentro de una canasta)
+const usaArchivo = (d, archivo) => d && (d.archivo === archivo || (d.archivos || []).includes(archivo));
 const CLAVE_SELECCION = "romper-mercado.series-en-uso";
 
 function leerSeleccion() {
@@ -125,10 +137,16 @@ function pintarSerieEnUso(prefijo) {
   const caja = $(`${prefijo}-serie`);
   if (!caja) return;
   const d = SERIES_EN_USO[prefijo];
-  caja.innerHTML = d
-    ? `<b>${d.ticker}</b><span>${d.fechas[0]} → ${d.fechas[d.fechas.length - 1]}</span>
-       <span>${d.precios.length} precios</span><span>${d.fuente}</span>`
-    : `<b>Sin serie</b><span>el simulador usa parámetros de ejemplo</span>`;
+  if (d && d.tipo === "canasta") {
+    caja.innerHTML = `<b>${d.nombre}</b><span>${d.tickers.join(", ")}</span><span>${d.tickers.length} acciones</span>`;
+  } else {
+    caja.innerHTML = d
+      ? `<b>${d.ticker}</b><span>${d.fechas[0]} → ${d.fechas[d.fechas.length - 1]}</span>
+         <span>${d.precios.length} precios</span><span>${d.fuente}</span>`
+      : prefijo === "manada"
+        ? `<b>Sin canasta</b><span>elige una en Toma de datos</span>`
+        : `<b>Sin serie</b><span>el simulador usa parámetros de ejemplo</span>`;
+  }
   const quitar = $(`${prefijo}-quitar`);
   if (quitar) quitar.hidden = !d;
 }
@@ -136,22 +154,27 @@ function pintarSerieEnUso(prefijo) {
 // Manda una serie a un módulo: calibra, dibuja y recuerda la elección.
 function usarSerieEn(prefijo, datos, { restaurada = false } = {}) {
   const estado = $(`${prefijo}-estado`);
-  if (datos.precios.length < MINIMO_CALIBRAR) {
+  if (datos.tipo !== "canasta" && datos.precios.length < MINIMO_CALIBRAR) {
     throw new Error(`${datos.ticker} tiene ${datos.precios.length} precios; para calibrar se necesitan al menos ${MINIMO_CALIBRAR}.`);
   }
   semillaActual = SEMILLA_BASE;
   CARGADORES[prefijo](datos); // si la calibración falla, lanza el error y no se guarda nada
   SERIES_EN_USO[prefijo] = datos;
-  if (datos.archivo) guardarSeleccion(prefijo, datos.archivo);
+  if (datos.tipo === "canasta") guardarSeleccion(prefijo, { nombre: datos.nombre, archivos: datos.archivos });
+  else if (datos.archivo) guardarSeleccion(prefijo, datos.archivo);
   pintarSerieEnUso(prefijo);
   refrescarRiel();
   actualizarRangos();
   estado.className = datos.aviso ? "estado aviso" : "estado";
   estado.textContent = datos.aviso
     ? datos.aviso
-    : restaurada
+    : restaurada && datos.tipo === "canasta"
+      ? "Canasta restaurada desde las copias guardadas (sin internet)."
+      : restaurada
       ? `Serie restaurada desde la copia guardada (consultada ${datos.calidad?.consultado || "antes"}). Sliders en los valores calibrados.`
-      : `Serie cargada desde Toma de datos. Los sliders quedaron en los valores calibrados; muévelos para ver qué cambia.`;
+      : datos.tipo === "canasta"
+        ? `Canasta cargada desde Toma de datos. Mueve la ventana de fechas para ver cómo cambian las pruebas.`
+        : `Serie cargada desde Toma de datos. Los sliders quedaron en los valores calibrados; muévelos para ver qué cambia.`;
 }
 
 // Deja de usar la serie: el módulo vuelve a los parámetros de ejemplo
@@ -169,16 +192,21 @@ function soltarSerie(prefijo) {
     estado.className = "estado";
     estado.textContent = prefijo === "ou"
       ? "Sin serie: volvió al ejercicio 3 del taller (liquidez en millones de USD)."
-      : "Sin serie: el simulador volvió a los parámetros de ejemplo.";
+      : prefijo === "manada"
+        ? "Sin canasta: elige una en Toma de datos."
+        : "Sin serie: el simulador volvió a los parámetros de ejemplo.";
   }
 }
 
 // Al abrir la página: cada módulo recupera la serie que tenía elegida.
 async function restaurarSelecciones() {
-  for (const [prefijo, archivo] of Object.entries(leerSeleccion())) {
+  for (const [prefijo, eleccion] of Object.entries(leerSeleccion())) {
     if (!CARGADORES[prefijo]) continue;
     try {
-      usarSerieEn(prefijo, await cargarGuardado(archivo), { restaurada: true });
+      const datos = typeof eleccion === "string"
+        ? await cargarGuardado(eleccion)
+        : construirCanasta(eleccion.nombre, await Promise.all(eleccion.archivos.map(cargarGuardado)));
+      usarSerieEn(prefijo, datos, { restaurada: true });
     } catch (e) {
       guardarSeleccion(prefijo, null); // la copia ya no existe o no hay servidor
       const estado = $(`${prefijo}-estado`);

@@ -22,7 +22,7 @@ la teoría se entiende, el foco es la **interpretación económica y de mercado*
 ## Modelos vistos en clase
 
 GBM → saltos de Merton → Ornstein-Uhlenbeck → browniano fraccional → comportamiento
-en manada (casos GameStop 2021 y subprime 2007-09) → opciones reales (visto el
+en manada (los compañeros presentaron CSAD, CSSD y LSV; usaron CSAD) → opciones reales (visto el
 10 nov 2026; falta definir método y tipos de opción).
 Machine learning: fuera del aplicativo por ahora.
 
@@ -67,7 +67,6 @@ Machine learning: fuera del aplicativo por ahora.
 ## Pendiente de decidir
 
 - Opciones reales: método (binomial CRR / Black-Scholes) y tipos de opción.
-- Manada: Kirman (implementado) vs modelo de umbral.
 
 ## Revisión de los datos de Yahoo — reglas del taller vs estado actual
 
@@ -110,8 +109,15 @@ Fase 2 (Merton) hecha el 11 nov, pendiente de revisión del equipo. Cada módulo
 archivo propio que se registra en `MODULOS` (app.js) y reutiliza `conectarFormularioDatos`.
 Manada y opciones reales se deciden cuando toque esa fase.
 F3 (OU) revisada. F4 (fBm) hecha el 11 nov, pendiente de revisión.
-F5 (manada) y F6 (opciones reales) EN PAUSA: deben basarse en lo que presentaron los
-compañeros del curso; Nicolás trae ese material antes de construirlas.
+F5 (manada) hecha el 11 nov, pendiente de revisión: CSAD (Chang, Cheng y Khorana 2000) y CSSD
+(Christie y Huang 1995) en forma estándar, como presentaron los compañeros (no se tiene su
+material exacto). Solo datos reales + ventana de fechas + cola de CSSD; sin simulación (Kirman
+eliminado). R_m = promedio simple de la canasta; log-retornos; errores Newey-West con
+L = ⌊4(T/100)^(2/9)⌋ (verificado contra statsmodels: diferencia ~1e-13). LSV no se puede
+(necesita operaciones de fondos). Resultado honesto: con las canastas recomendadas NO hay
+evidencia significativa de manada (meme período completo p ≈ 0.06). Canastas en `CANASTAS`
+(manada.js); en Toma de datos se bajan como canasta y se recuerdan.
+F6 (opciones reales) EN PAUSA: depende de lo que presentaron los compañeros.
 Rediseño visual (F8) hecho el 11 nov, pendiente de revisión: ambiente de la app "Payno"
 (cielo, titulares ligeros) + interfaz de tablero tipo "Spotbank" (tarjetas, pestañas píldora,
 riel de iconos, cifra grande, fichas). Tipografías locales en `fuentes/` (OFL): Geist (interfaz),

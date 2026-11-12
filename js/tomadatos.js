@@ -49,14 +49,9 @@ const SERIES_MODELO = [
     { ticker: "^VIX", etiqueta: "VIX · 10 años", anios: 10,
       porque: "Nivel antipersistente (Ĥ ≈\u00a00.37), coherente con la reversión que muestra OU." },
   ] },
-  { prefijo: "manada", nombre: "5 · Manada", soloVista: true, nota: "en pausa: solo vista rápida", series: [
-    { ticker: "GME", etiqueta: "GameStop · 2020-21", desde: "2020-06-01", hasta: "2021-06-30",
-      porque: "La subida de enero de 2021." },
-    { ticker: "AMC", etiqueta: "AMC · 2020-21", desde: "2020-06-01", hasta: "2021-07-31",
-      porque: "Otra acción «meme» del mismo episodio." },
-    { ticker: "^GSPC", etiqueta: "S&P 500 · 2006-09", desde: "2006-01-01", hasta: "2009-12-31",
-      porque: "Crisis subprime." },
-  ] },
+  // Manada recibe una canasta (varias acciones): sus opciones vienen de CANASTAS (manada.js)
+  { prefijo: "manada", nombre: "5 · Comportamiento en manada", canastas: true,
+    series: CANASTAS.map((k) => ({ etiqueta: `${k.nombre} (${k.tickers.length})`, porque: k.porque, canasta: k })) },
 ];
 const OTRO = "otro"; // última opción del menú: cualquier ticker, en «Bajar una serie»
 const opcionModelo = {}; // prefijo -> opción elegida en su menú (se conserva al redibujar)
@@ -74,14 +69,21 @@ const rangoTexto = (d) => `${d.fechas[0]} → ${d.fechas[d.fechas.length - 1]}`;
 
 // ---- tarjetas de modelos ----
 const porQue = (m, elegida) => elegida === OTRO
-  ? "Escribe cualquier ticker de Yahoo Finance en «Bajar una serie» y luego «Usar en…»."
+  ? (m.canastas
+    ? "Escribe los tickers de tu canasta en «Canasta para Manada», abajo."
+    : "Escribe cualquier ticker de Yahoo Finance en «Bajar una serie» y luego «Usar en…».")
   : m.series[+elegida].porque;
-const textoBoton = (m, elegida) => elegida === OTRO ? "Ir a «Bajar una serie»" : m.soloVista ? "Bajar y ver" : "Bajar y usar";
+const textoBoton = (m, elegida) => elegida === OTRO
+  ? (m.canastas ? "Ir a «Canasta para Manada»" : "Ir a «Bajar una serie»")
+  : m.canastas ? "Bajar canasta y usar" : m.soloVista ? "Bajar y ver" : "Bajar y usar";
 function pintarModelos() {
   $("datos-modelos").innerHTML = SERIES_MODELO.map((m) => {
     const enUso = SERIES_EN_USO[m.prefijo];
     const uso = m.soloVista
       ? `<span class="uso">${m.nota}</span>`
+      : enUso && enUso.tipo === "canasta"
+        ? `<span class="uso">en uso: <b>${enUso.nombre}</b> (${enUso.tickers.length} acciones)
+             <button type="button" class="quitar-uso" data-soltar="${m.prefijo}">quitar</button></span>`
       : enUso
         ? `<span class="uso">en uso: <b>${enUso.ticker}</b> ${rangoTexto(enUso)}
              <button type="button" class="quitar-uso" data-soltar="${m.prefijo}">quitar</button></span>`
@@ -89,7 +91,7 @@ function pintarModelos() {
     const elegida = opcionModelo[m.prefijo] ?? "0";
     const opciones = m.series.map((s, i) =>
       `<option value="${i}"${String(i) === elegida ? " selected" : ""}>${s.etiqueta}</option>`).join("") +
-      `<option value="${OTRO}"${elegida === OTRO ? " selected" : ""}>Otro ticker…</option>`;
+      `<option value="${OTRO}"${elegida === OTRO ? " selected" : ""}>${m.canastas ? "Otra canasta…" : "Otro ticker…"}</option>`;
     return `<div class="modelo-datos${destinoDatos === m.prefijo ? " destino" : ""}">
       <b>${m.nombre}</b>${uso}
       <select class="menu-serie" data-modelo="${m.prefijo}" aria-label="Serie recomendada para ${m.nombre}">${opciones}</select>
@@ -115,8 +117,8 @@ async function refrescarGuardadas() {
   }
   caja.innerHTML = series.map((s) => {
     const usos = Object.entries(SERIES_EN_USO)
-      .filter(([, d]) => d.archivo === s.archivo)
-      .map(([p]) => `<i>${NOMBRES_MODULO[p]}</i>`).join("");
+      .filter(([, d]) => usaArchivo(d, s.archivo))
+      .map(([p]) => `<i>${NOMBRES_MODULO[p] || NOMBRE_MANADA}</i>`).join("");
     const activa = serieEnVista && serieEnVista.archivo === s.archivo ? " activa" : "";
     const csv = /CSV/.test(s.fuente) ? `<i class="csv">CSV</i>` : "";
     return `<div class="fila-serie${activa}">
@@ -190,24 +192,29 @@ function pintarBotonesUsar() {
   }
 }
 
-// manda la serie de la vista (o una recién bajada) a un módulo
+// manda la serie de la vista (o una recién bajada) a un módulo; devuelve si funcionó
 function asignar(prefijo, datos) {
+  let ok = true;
   try {
     usarSerieEn(prefijo, datos);
     const aviso = prefijo === "ou" ? avisoOU(datos) : null;
-    estadoDatos(`${datos.ticker} quedó en uso en ${NOMBRES_MODULO[prefijo]}.${aviso ? " " + aviso : ""}`, aviso ? "aviso" : "");
+    estadoDatos(`${datos.ticker} quedó en uso en ${NOMBRES_MODULO[prefijo] || NOMBRE_MANADA}.${aviso ? " " + aviso : ""}`, aviso ? "aviso" : "");
   } catch (e) {
     estadoDatos(e.message, "error");
+    ok = false;
   }
   pintarModelos();
   pintarBotonesUsar();
   refrescarGuardadas();
+  return ok;
 }
 
 // el módulo deja de usar su serie y vuelve a los parámetros de ejemplo
 function quitar(prefijo) {
   soltarSerie(prefijo);
-  estadoDatos(`${NOMBRES_MODULO[prefijo]} ya no usa ninguna serie: volvió a los parámetros de ejemplo.`);
+  estadoDatos(prefijo === "manada"
+    ? "Manada ya no usa ninguna canasta."
+    : `${NOMBRES_MODULO[prefijo]} ya no usa ninguna serie: volvió a los parámetros de ejemplo.`);
   pintarModelos();
   pintarBotonesUsar();
   refrescarGuardadas();
@@ -215,9 +222,9 @@ function quitar(prefijo) {
 
 // borra una copia guardada; los módulos que la usaban vuelven a los parámetros de ejemplo
 function borrarSerie(archivo, ticker) {
-  const usan = Object.entries(SERIES_EN_USO).filter(([, d]) => d.archivo === archivo).map(([p]) => p);
+  const usan = Object.entries(SERIES_EN_USO).filter(([, d]) => usaArchivo(d, archivo)).map(([p]) => p);
   const aviso = usan.length
-    ? `\n\nLa usa${usan.length > 1 ? "n" : ""} ${usan.map((p) => NOMBRES_MODULO[p]).join(", ")}: volverá${usan.length > 1 ? "n" : ""} a los parámetros de ejemplo.`
+    ? `\n\nLa usa${usan.length > 1 ? "n" : ""} ${usan.map((p) => NOMBRES_MODULO[p] || NOMBRE_MANADA).join(", ")}: volverá${usan.length > 1 ? "n" : ""} a los parámetros de ejemplo.`
     : "";
   if (!confirm(`¿Borrar del computador la copia guardada de ${ticker}?${aviso}\n\nSe puede volver a bajar después (con internet).`)) return;
   ocupado(async () => {
@@ -242,6 +249,22 @@ async function ocupado(tarea) {
   const botones = document.querySelectorAll("#datos button");
   botones.forEach((b) => (b.disabled = true));
   try { await tarea(); } finally { botones.forEach((b) => (b.disabled = false)); }
+}
+
+async function bajarCanasta(nombre, tickers, desde, hasta) {
+  const series = [];
+  try {
+    for (const [i, t] of tickers.entries()) {
+      estadoDatos(`Bajando la canasta «${nombre}»: ${i + 1} de ${tickers.length} (${t})…`);
+      series.push(await cargarHistorico(t, desde, hasta));
+    }
+  } catch (e) {
+    return estadoDatos(`No se pudo bajar ${tickers[series.length]}: ${e.message}`, "error");
+  }
+  const avisos = series.filter((d) => d.aviso).map((d) => d.ticker);
+  if (!asignar("manada", construirCanasta(nombre, series))) return; // el error ya quedó en el estado
+  if (avisos.length) estadoDatos(`Canasta en uso en Manada, pero sin conexión para ${avisos.join(", ")}: se usaron copias guardadas.`, "aviso");
+  else estadoDatos(`Canasta «${nombre}» (${tickers.length} acciones) quedó en uso en Manada. Quedaron guardadas en el computador.`);
 }
 
 async function bajar(ticker, desde, hasta, prefijo = null) {
@@ -290,6 +313,15 @@ MODULOS.datos = {
       if (!b) return;
       const m = SERIES_MODELO.find((x) => x.prefijo === b.dataset.modelo);
       const elegida = opcionModelo[m.prefijo] ?? "0";
+      if (elegida === OTRO && m.canastas) {
+        $("datos-canasta-form").scrollIntoView({ behavior: "smooth", block: "center" });
+        $("datos-canasta-tickers").focus();
+        return;
+      }
+      if (m.canastas) {
+        const k = m.series[+elegida].canasta;
+        return ocupado(() => bajarCanasta(k.nombre, k.tickers, k.desde || haceAnios(k.anios), k.hasta || fechaISO(new Date())));
+      }
       if (elegida === OTRO) {
         destinoDatos = m.soloVista ? null : m.prefijo;
         $("datos-form").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -306,6 +338,15 @@ MODULOS.datos = {
     $("datos-form").addEventListener("submit", (ev) => {
       ev.preventDefault();
       ocupado(() => bajar($("datos-ticker").value.trim(), $("datos-desde").value, $("datos-hasta").value));
+    });
+
+    // canasta propia para Manada: tickers separados por comas, con las fechas de «Bajar una serie»
+    $("datos-canasta-form").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const tickers = [...new Set($("datos-canasta-tickers").value.split(/[\s,;]+/).map((t) => t.trim().toUpperCase()).filter(Boolean))];
+      if (tickers.length < 2) return estadoDatos("Una canasta necesita al menos 2 tickers, separados por comas.", "error");
+      if (tickers.length > 30) return estadoDatos("Máximo 30 tickers por canasta.", "error");
+      ocupado(() => bajarCanasta(`Canasta propia (${tickers.length})`, tickers, $("datos-desde").value, $("datos-hasta").value));
     });
 
     $("datos-csv-archivo").addEventListener("change", () => {
