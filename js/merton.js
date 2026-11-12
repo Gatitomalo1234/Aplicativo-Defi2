@@ -6,6 +6,20 @@
 // - calibración por umbral con un slider c: se ve cómo cambian λ̂, μ̂J, σ̂J y σ̂
 //   según qué tan grande tiene que ser un movimiento para contarlo como salto.
 
+// Qué pasó en los días de salto de NVDA (3 años, c = 3). Verificado en prensa financiera
+// (Reuters, Bloomberg, AP, CNBC) el 11 nov 2026. Otras series o fechas muestran «—».
+const NOTICIAS_SALTOS = {
+  "NVDA|2024-02-22": "Resultados trimestrales muy por encima de lo esperado por la demanda de chips para IA.",
+  "NVDA|2024-04-19": "Venta general de acciones de chips e IA; no hubo noticia propia de Nvidia.",
+  "NVDA|2024-07-31": "Repunte de los chips: Microsoft anunció más gasto en IA y la Fed abrió la puerta a bajar tasas.",
+  "NVDA|2024-09-03": "Caída de todo el sector de chips tras unos resultados que no convencieron.",
+  "NVDA|2025-01-27": "DeepSeek (China) presentó un modelo de IA mucho más barato: dudas sobre la demanda de chips.",
+  "NVDA|2025-02-27": "Resultados buenos, pero el margen esperado para el siguiente trimestre quedó por debajo.",
+  "NVDA|2025-03-03": "Aranceles de Trump a México y Canadá y temor a más restricciones de exportación a China.",
+  "NVDA|2025-04-09": "Trump anunció una pausa de 90 días a los aranceles: el mejor día de los chips en años.",
+  "NVDA|2026-11-05": "Venta de acciones de chips de IA por dudas sobre la demanda de centros de datos tras las elecciones.",
+};
+
 const EJEMPLO_MERTON = { s0: 100, mu: 0.08, sigma: 0.2, lambda: 0, muJ: -0.05, sigmaJ: 0.08 };
 let mercadoMerton = null; // { datos, cal } cuando hay una serie cargada
 
@@ -121,7 +135,7 @@ function mostrarCalibracionMerton() {
         <thead><tr><th>Fecha</th><th>Log-retorno</th><th>¿Qué pasó ese día?</th></tr></thead>
         <tbody>${cal.saltos.map((s) => `
           <tr><td>${s.fecha}</td><td class="${s.r < 0 ? "negativo" : ""}">${r(s.r)}</td>
-              <td><em>[completar: noticia o earnings]</em></td></tr>`).join("")}
+              <td class="noticia">${NOTICIAS_SALTOS[`${datos.ticker}|${s.fecha}`] || "—"}</td></tr>`).join("")}
         </tbody></table>`;
 }
 
