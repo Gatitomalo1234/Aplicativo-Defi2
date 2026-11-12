@@ -21,7 +21,7 @@ function formatoNivelOU() {
 
 function configurarSlider(id, min, max, valor) {
   const el = $(id);
-  el.min = min; el.max = max; el.step = (max - min) / 1000;
+  el.min = min; el.max = max; el.step = "any"; // así θ, κ y σ quedan exactos (ejemplo o calibrados)
   el.value = valor;
 }
 

@@ -41,7 +41,7 @@ const SERIES_MODELO = [
   ] },
   { prefijo: "vasicek", nombre: "4 · Vasicek (tasas)", series: [
     { ticker: "^IRX", etiqueta: "Letra del Tesoro 13 semanas · 5 años", anios: 5,
-      porque: "La tasa corta de EE. UU.: κ̂ ≈\u00a00.76, θ̂ ≈\u00a04.9\u00a0% y una curva que sube de 4.4\u00a0% a 4.9\u00a0%." },
+      porque: "La tasa corta de EE. UU.: κ̂ ≈\u00a00.76, θ̂ ≈\u00a04.9\u00a0% y una curva que sube de 4.2\u00a0% a 4.9\u00a0%." },
     { ticker: "^IRX", etiqueta: "Letra del Tesoro 13 semanas · 20 años", anios: 20,
       porque: "Contraste: incluye 2008-2021, con tasas casi en 0. θ̂ ≈\u00a01.2\u00a0% y la curva sale invertida." },
   ] },
@@ -49,11 +49,11 @@ const SERIES_MODELO = [
     { ticker: "NVDA", etiqueta: "NVIDIA · 3 años", anios: 3,
       porque: "Ĥ ≈\u00a00.48: prácticamente sin memoria." },
     { ticker: "^GSPC", etiqueta: "S&P 500 · 10 años", anios: 10,
-      porque: "Ĥ ≈\u00a00.41: algo antipersistente." },
+      porque: "Índice amplio: Ĥ ≈\u00a00.49, prácticamente sin memoria." },
     { ticker: "GLD", etiqueta: "Oro (GLD) · 10 años", anios: 10,
-      porque: "Otro tipo de activo, una materia prima: Ĥ ≈\u00a00.47." },
+      porque: "Otro tipo de activo, una materia prima: Ĥ ≈\u00a00.48." },
     { ticker: "^VIX", etiqueta: "VIX · 10 años", anios: 10,
-      porque: "Nivel antipersistente (Ĥ ≈\u00a00.37), coherente con la reversión que muestra OU." },
+      porque: "Nivel antipersistente (Ĥ ≈\u00a00.39), coherente con la reversión que muestra OU." },
   ] },
   // Manada recibe una canasta (varias acciones): sus opciones vienen de CANASTAS (manada.js)
   { prefijo: "manada", nombre: "6 · Comportamiento en manada", canastas: true,

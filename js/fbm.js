@@ -47,13 +47,14 @@ function simularYDibujarFBM() {
   // lectura: memoria (ρ) y escala del riesgo (σ·T^H frente a σ·√T del GBM)
   const T = p.dias / DIAS_HABILES;
   const rho = rhoUno(p.H);
+  const casiSinMemoria = Math.abs(p.H - 0.5) < 0.05; // |ρ| < 0.07
   let memoria;
   if (Math.abs(p.H - 0.5) < 0.005) {
     memoria = "Con H = 0.5 los retornos son independientes: el modelo es exactamente el GBM y las dos bandas coinciden.";
   } else {
     memoria =
       `Con H = ${p.H.toFixed(2)} la correlación entre el retorno de un día y el del siguiente es ` +
-      `ρ = 2^(2H−1) − 1 = ${rho.toFixed(2)} (${rho > 0 ? "lo que sube tiende a seguir subiendo" : "lo que sube tiende a corregirse"}). ` +
+      `ρ = 2^(2H−1) − 1 = ${rho.toFixed(2)} (${casiSinMemoria ? "casi cero: muy cerca de un mercado sin memoria" : rho > 0 ? "lo que sube tiende a seguir subiendo" : "lo que sube tiende a corregirse"}). ` +
       `A ${p.dias} días la desviación del log-precio es σ·T^H = ${pct(p.sigma * Math.pow(T, p.H))}, ` +
       `frente a σ·√T = ${pct(p.sigma * Math.sqrt(T))} sin memoria.`;
   }
@@ -64,7 +65,7 @@ function simularYDibujarFBM() {
     `${lecturaAbanico(caminos, s0, p.dias, p.n, origen)} ${memoria} ${textoSemilla()}`;
   pintarFichas("fbm", [
     ...fichasDe(caminos, s0).slice(0, 3),
-    { etiqueta: "memoria ρ", valor: rho.toFixed(2), nota: rho > 0.005 ? "momentum" : rho < -0.005 ? "sobre-reacción" : "sin memoria" },
+    { etiqueta: "memoria ρ", valor: rho.toFixed(2), nota: Math.abs(p.H - 0.5) < 0.005 ? "sin memoria" : casiSinMemoria ? "casi sin memoria" : rho > 0 ? "momentum" : "sobre-reacción" },
   ]);
   if (!mercadoFBM) {
     pintarKPI("fbm", {

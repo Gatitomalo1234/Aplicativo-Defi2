@@ -66,6 +66,8 @@ function fijarSlider(id, valor) {
   if (valor < +el.min) el.min = Math.floor(valor * 10) / 10;
   if (valor > +el.max) el.max = Math.ceil(valor * 10) / 10;
   el.value = valor;
+  // si el paso del slider redondea el valor calibrado, el slider pasa a paso libre
+  if (Math.abs(+el.value - valor) > 1e-12) { el.step = "any"; el.value = valor; }
 }
 
 // resumen de calidad de los datos (reglas del taller). Las copias guardadas

@@ -49,7 +49,7 @@
     </button>
     <div class="hero-lado">
       <div class="orbe" aria-hidden="true"></div>
-      <p class="intro">El movimiento browniano geométrico describe un mercado idealizado: retornos independientes, volatilidad constante, trayectorias continuas, agentes que deciden por su cuenta. Es el punto de partida de todo el curso — y casi ninguno de sus supuestos sobrevive al contacto con los datos. Cada modelo de este aplicativo rompe exactamente <em>uno</em> de esos supuestos y, al romperlo, gana la capacidad de capturar un fenómeno real del mercado.</p>
+      <p class="intro">El movimiento browniano geométrico describe un mercado idealizado: retornos independientes, volatilidad constante, trayectorias continuas, agentes que deciden por su cuenta. Es el punto de partida de todo el curso — y casi ninguno de sus supuestos sobrevive al contacto con los datos. Cada uno de los modelos siguientes rompe exactamente <em>uno</em> de sus supuestos y, al romperlo, gana la capacidad de capturar un fenómeno real del mercado; el último, opciones reales, los usa para tomar una decisión.</p>
     </div>
   </div>
 
@@ -111,10 +111,10 @@
 
   <div class="tarjeta ancho">
     <div class="tarjeta-cabeza"><h2>La convención del aplicativo</h2><span class="nota-cabeza">lo que nos hace defendibles</span></div>
-    <p class="nota">Convención del aplicativo: los modelos de precio se simulan con la
-  transición exacta del taller de valoración, S(t+Δt) = S(t)·exp[(μ − σ²/2)Δt + σ√Δt·Z],
-  que garantiza precios positivos; Ornstein-Uhlenbeck, que modela un nivel, usa su
-  solución en distribución, la del primer taller. Todos con dt = 1/252 y con <em>las mismas</em> normales
+    <p class="nota">Convención del aplicativo: los modelos de precio (GBM, Merton y fBm) se simulan
+  en logaritmos, con la transición exacta del taller de valoración, S(t+Δt) = S(t)·exp[(μ − σ²/2)Δt + σ√Δt·Z],
+  que garantiza precios positivos: Merton le suma los saltos y fBm cambia el browniano por uno con memoria.
+  Ornstein-Uhlenbeck y Vasicek, que modelan un nivel, usan la solución en distribución del primer taller. Todos con dt = 1/252 y con <em>las mismas</em> normales
   Z bajo semilla fija. Al mover un parámetro, el cambio que se ve en las trayectorias
   es atribuible al parámetro, no al azar.</p>
   </div>
@@ -692,7 +692,7 @@
     <ul class="puntos">
       <li>Mide la memoria con un solo número: H > 0.5 es momentum y H < 0.5 es sobre-reacción.</li>
       <li>Con H = 0.5 vuelve a ser el GBM, así que se ve solo el efecto de la memoria.</li>
-      <li>En los datos: NVDA no tiene memoria (Ĥ ≈ 0.48) y el VIX es antipersistente (Ĥ ≈ 0.37), igual que en OU.</li>
+      <li>En los datos: NVDA no tiene memoria (Ĥ ≈ 0.48) y el VIX es antipersistente (Ĥ ≈ 0.39), igual que en OU.</li>
     </ul>
   </div>
   <div class="tarjeta col-6 explica">
