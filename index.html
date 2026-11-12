@@ -665,27 +665,137 @@
 </section>
 
 <section id="opciones" class="tablero" hidden>
-  <div class="tarjeta hero ancho hero-solo" data-parte="ecuacion">
+  <div class="tarjeta hero ancho" data-parte="ecuacion">
     <div class="hero-texto">
       <p class="eyebrow">Módulo 6 · de modelar a decidir</p>
       <h1>Opciones <span class="resalte">reales</span></h1>
-      <p class="bajada">Cuánto vale la flexibilidad en un proyecto.</p>
+      <p class="bajada">Cuánto vale la flexibilidad de un proyecto: poder abandonarlo, ampliarlo o reducirlo.</p>
+    </div>
+    <div class="hero-formulas">
+      <p class="etiqueta">El valor de la flexibilidad</p>
+      <p class="ecuacion">VPN<sub>modificado</sub> = VPN<sub>estático</sub> + c, &nbsp; c ≥ 0</p>
+      <p class="etiqueta">Árbol binomial de Cox, Ross y Rubinstein (Venegas, ec. 69.28)</p>
+      <p class="ecuacion">u = e<sup>σ√Δt</sup>, &nbsp; d = 1/u, &nbsp; q = (e<sup>rΔt</sup> − d)/(u − d)<br>
+      C = máx( E, &nbsp;e<sup>−rΔt</sup>[ q·C<sub>u</sub> + (1 − q)·C<sub>d</sub> ] )</p>
     </div>
   </div>
+
   <div class="tarjeta ancho">
-    <div class="tarjeta-cabeza"><h2>En construcción</h2><span class="chip-pausa">en pausa</span></div>
-    <div class="pendiente">
-    <p>Fase 6. Este módulo no rompe un supuesto: usa los modelos anteriores para tomar
-    una decisión de inversión. Propuesta (por confirmar con lo visto en clase):</p>
-    <ul>
-      <li>Árbol binomial CRR del curso aplicado al valor de un proyecto
-          (U = e^(σ√Δt), D = 1/U, p = ((1+r) − D) / (U − D)).</li>
-      <li>σ del proyecto tomada de una empresa comparable en Yahoo Finance,
-          calibrada igual que en el GBM.</li>
-      <li>Opciones de expandir, abandonar y esperar.</li>
-      <li>VPN tradicional frente a VPN expandido = VPN + valor de la flexibilidad.</li>
+    <div class="tarjeta-cabeza"><h2>Símbolo a símbolo</h2></div>
+    <ul class="simbolos">
+      <li><span class="simbolo">S</span><div><p>Valor presente de los flujos del proyecto (el «subyacente»). Sube por u o baja por d en cada paso.</p></div></li>
+      <li><span class="simbolo">I</span><div><p>Inversión inicial. VPN estático = S<sub>0</sub> − I<sub>0</sub>: el valor sin ninguna flexibilidad.</p></div></li>
+      <li><span class="simbolo">q</span><div><p>Probabilidad neutral al riesgo: no es una probabilidad real, sirve para descontar a la tasa libre de riesgo r.</p></div></li>
+      <li><span class="simbolo">E</span><div><p>Valor de ejercer la opción en ese nodo. Abandono: E = V (rescate). Expansión: E = (1 + α)S − K'. Contracción: E = (1 − γ)S + A.</p></div></li>
+      <li><span class="simbolo">c</span><div><p>Valor de la opción: c = C<sub>0</sub> − S<sub>0</sub>. Lo que vale poder decidir después, cuando la incertidumbre se resuelve.</p></div></li>
+    </ul>
+    <p class="aclaracion">Supuesto MAD (Copeland y Antikarov, 2001): el proyecto no cotiza en bolsa, así que se
+    toma su valor sin flexibilidad como si fuera un activo negociado. La σ del proyecto se puede
+    aproximar con la de una empresa comparable que sí cotiza.</p>
+  </div>
+
+  <div class="tarjeta col-7" data-parte="datos">
+    <div class="tarjeta-cabeza"><h2>σ de una empresa comparable</h2><span class="nota-cabeza">opcional</span></div>
+    <div class="serie-en-uso" id="opciones-serie"></div>
+    <div class="botones-datos">
+      <a class="boton boton-principal" href="#datos" data-para="opciones">Elegir comparable en Toma de datos</a>
+      <button type="button" class="boton" id="opciones-quitar" hidden>Quitar comparable</button>
+    </div>
+    <p class="calidad-linea" id="opciones-sigma-info" hidden></p>
+    <p class="estado" id="opciones-estado" role="status">Sin comparable: σ se fija a mano (el caso de la
+    presentación usa σ = ln 2 ≈ 69.3 %).</p>
+  </div>
+  <div class="tarjeta col-5 kpi" id="opciones-kpi"></div>
+
+  <div class="tarjeta ancho" data-parte="simulador">
+    <div class="tarjeta-cabeza"><h2>Árbol binomial</h2><span class="nota-cabeza" id="opciones-nota-arbol"></span></div>
+    <div class="selector-tipo" id="opciones-tipo" role="group" aria-label="Tipo de opción">
+      <button type="button" data-tipo="abandono" class="activo">Abandono</button>
+      <button type="button" data-tipo="expansion">Expansión</button>
+      <button type="button" data-tipo="contraccion">Contracción</button>
+    </div>
+    <div class="simulador">
+      <div class="controles">
+        <label><span>S<sub>0</sub> valor del proyecto</span> <output id="opciones-S0-out"></output>
+          <input type="range" id="opciones-S0" min="10" max="300" step="1" value="90">
+        </label>
+        <label><span>I<sub>0</sub> inversión</span> <output id="opciones-I0-out"></output>
+          <input type="range" id="opciones-I0" min="10" max="300" step="1" value="90">
+        </label>
+        <label><span>σ volatilidad anual</span> <output id="opciones-sigma-out"></output>
+          <input type="range" id="opciones-sigma" min="0.05" max="1.5" step="any" value="0.6931471805599453">
+        </label>
+        <label><span>r tasa libre de riesgo</span> <output id="opciones-r-out"></output>
+          <input type="range" id="opciones-r" min="0" max="0.4" step="any" value="0.28768207245178085">
+        </label>
+        <label><span>T plazo (años)</span> <output id="opciones-T-out"></output>
+          <input type="range" id="opciones-T" min="1" max="10" step="1" value="3">
+        </label>
+        <label><span>n pasos del árbol</span> <output id="opciones-n-out"></output>
+          <input type="range" id="opciones-n" min="1" max="60" step="1" value="3">
+        </label>
+        <div class="param-tipo" data-para-tipo="abandono">
+          <label><span>V rescate</span> <output id="opciones-V-out"></output>
+            <input type="range" id="opciones-V" min="0" max="200" step="1" value="60">
+          </label>
+        </div>
+        <div class="param-tipo" data-para-tipo="expansion" hidden>
+          <label><span>α ampliación</span> <output id="opciones-alfa-out"></output>
+            <input type="range" id="opciones-alfa" min="0" max="1.5" step="0.01" value="0.5">
+          </label>
+          <label><span>K' costo de ampliar</span> <output id="opciones-Kexp-out"></output>
+            <input type="range" id="opciones-Kexp" min="0" max="300" step="1" value="40">
+          </label>
+        </div>
+        <div class="param-tipo" data-para-tipo="contraccion" hidden>
+          <label><span>γ fracción que se reduce</span> <output id="opciones-gamma-out"></output>
+            <input type="range" id="opciones-gamma" min="0" max="1" step="0.01" value="0.3">
+          </label>
+          <label><span>A ahorro al reducir</span> <output id="opciones-A-out"></output>
+            <input type="range" id="opciones-A" min="0" max="200" step="1" value="25">
+          </label>
+        </div>
+        <div class="botones">
+          <button type="button" id="opciones-caso">Caso de la presentación</button>
+        </div>
+        <p class="aclaracion">El caso de la presentación (Venegas, págs. 811–813): S<sub>0</sub> = I<sub>0</sub> = 90,
+        V = 60, u = 2, d = 0.5 y e<sup>r</sup> = 4/3 por período, es decir σ = ln 2 y r = ln(4/3), con 3 pasos de un año.</p>
+      </div>
+      <div class="panel-grafico">
+        <canvas id="opciones-arbol"></canvas>
+        <div class="nodo-clave" id="opciones-clave"></div>
+        <div class="fichas" id="opciones-fichas"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta ancho" data-parte="calibracion">
+    <div class="tarjeta-cabeza"><h2>Paradoja de la volatilidad</h2><span class="nota-cabeza">c contra σ, con lo demás fijo</span></div>
+    <div class="dos-columnas">
+      <div><canvas id="opciones-paradoja" class="canvas-paradoja"></canvas></div>
+      <div>
+        <p class="texto-paradoja">Sin flexibilidad, más σ es más riesgo y el VPN cae. Con la opción, más σ
+        <b>sube</b> su valor: si el proyecto va bien se aprovecha todo, y si va mal la opción limita la pérdida.</p>
+        <div id="opciones-pasos"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta col-6 explica" data-parte="explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-si" aria-hidden="true">✓</span>Qué explica</h2></div>
+    <ul class="puntos">
+      <li>El valor de poder decidir después: en el caso, la opción de abandono vale c ≈ 5.7 aunque el VPN estático sea 0.</li>
+      <li>Por qué la incertidumbre puede sumar valor: con la opción, c sube cuando sube σ.</li>
+      <li>Cuándo conviene ejercer: el árbol marca en qué nodos sale mejor abandonar, ampliar o reducir.</li>
     </ul>
   </div>
+  <div class="tarjeta col-6 explica">
+    <div class="tarjeta-cabeza"><h2><span class="marca-no" aria-hidden="true">×</span>Qué no explica</h2></div>
+    <ul class="puntos">
+      <li>El proyecto no cotiza: se asume que su valor se comporta como un activo negociado (supuesto MAD).</li>
+      <li>La σ de una empresa comparable es una aproximación, no la volatilidad real del proyecto.</li>
+      <li>Solo una opción a la vez: las opciones combinadas o secuenciales necesitan árboles más complejos.</li>
+    </ul>
   </div>
 </section>
 
@@ -721,6 +831,7 @@
 <script src="js/ou.js"></script>
 <script src="js/fbm.js"></script>
 <script src="js/manada.js"></script>
+<script src="js/opciones.js"></script>
 <script src="js/tomadatos.js"></script>
 </body>
 </html>

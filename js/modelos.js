@@ -173,3 +173,53 @@ function simularFBM({ s0, mu, sigma, H }, Z) {
 
 // 5. Comportamiento en manada: no es un modelo de simulación en este aplicativo.
 //    Se mide con CSSD y CSAD sobre datos reales (ver datos.js y manada.js).
+
+// 6. Opciones reales — árbol binomial de Cox, Ross y Rubinstein (como lo presentaron
+//    los compañeros, Venegas cap. 69). S es el valor presente de los flujos del proyecto.
+//      Δt = T/n,  u = e^(σ√Δt),  d = 1/u,  q = (e^(rΔt) − d)/(u − d)
+//    En cada nodo se compara ejercer la opción (E) con continuar:
+//      C = máx( E(S),  e^(−rΔt)·[q·C_u + (1 − q)·C_d] )      y al final  C = máx(S, E(S))
+//    Valor de ejercer, según el tipo de opción:
+//      abandono:     E = V                 (se liquida y se recibe el rescate V)
+//      expansión:    E = (1 + α)·S − K'    (se paga K' y se amplía la escala en α)
+//      contracción:  E = (1 − γ)·S + A     (se reduce la escala en γ y se ahorra A)
+//    VPN estático = S0 − I0;  VPN modificado = C0 − I0 = VPN estático + c,  c = C0 − S0.
+const TIPOS_OPCION = {
+  abandono:    { nombre: "Abandono",    accion: "ABANDONA", ejercer: (S, p) => p.V },
+  expansion:   { nombre: "Expansión",   accion: "EXPANDE",  ejercer: (S, p) => (1 + p.alfa) * S - p.Kexp },
+  contraccion: { nombre: "Contracción", accion: "CONTRAE",  ejercer: (S, p) => (1 - p.gamma) * S + p.A },
+};
+
+function arbolOpcionReal(p) {
+  const { S0, I0, sigma, r, T, n, tipo } = p;
+  const dt = T / n;
+  const u = Math.exp(sigma * Math.sqrt(dt)), d = 1 / u;
+  const crecimiento = Math.exp(r * dt), fd = 1 / crecimiento;
+  const q = (crecimiento - d) / (u - d);
+  if (!(q > 0 && q < 1)) {
+    throw new Error(`Con estos parámetros q = ${q.toFixed(3)} queda fuera de (0, 1): habría arbitraje. Sube σ o baja r.`);
+  }
+  const E = (S) => TIPOS_OPCION[tipo].ejercer(S, p);
+  // nodos[t][j]: j = número de bajadas
+  const nodos = [];
+  for (let t = 0; t <= n; t++) {
+    nodos.push(Array.from({ length: t + 1 }, (_, j) => ({ S: S0 * Math.pow(u, t - j) * Math.pow(d, j) })));
+  }
+  for (const nodo of nodos[n]) {
+    nodo.continuar = nodo.S;           // al final, sin opción el proyecto vale S
+    nodo.E = E(nodo.S);
+    nodo.ejerce = nodo.E > nodo.S;
+    nodo.C = Math.max(nodo.S, nodo.E);
+  }
+  for (let t = n - 1; t >= 0; t--) {
+    for (let j = 0; j <= t; j++) {
+      const nodo = nodos[t][j];
+      nodo.continuar = fd * (q * nodos[t + 1][j].C + (1 - q) * nodos[t + 1][j + 1].C);
+      nodo.E = E(nodo.S);
+      nodo.ejerce = nodo.E > nodo.continuar;
+      nodo.C = Math.max(nodo.E, nodo.continuar);
+    }
+  }
+  const C0 = nodos[0][0].C;
+  return { nodos, dt, u, d, q, fd, C0, vpnEstatico: S0 - I0, vpnModificado: C0 - I0, c: C0 - S0 };
+}

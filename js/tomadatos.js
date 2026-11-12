@@ -49,6 +49,17 @@ const SERIES_MODELO = [
     { ticker: "^VIX", etiqueta: "VIX · 10 años", anios: 10,
       porque: "Nivel antipersistente (Ĥ ≈\u00a00.37), coherente con la reversión que muestra OU." },
   ] },
+  // Opciones reales: la serie es una empresa comparable; de ella sale la σ del proyecto
+  { prefijo: "opciones", nombre: "6 · Opciones reales (σ comparable)", series: [
+    { ticker: "EC", etiqueta: "Ecopetrol · 5 años", anios: 5,
+      porque: "Para un proyecto petrolero en Colombia: σ ≈\u00a038\u00a0%." },
+    { ticker: "CIB", etiqueta: "Bancolombia · 5 años", anios: 5,
+      porque: "Para un proyecto del sector financiero colombiano: σ ≈\u00a033\u00a0%." },
+    { ticker: "XLE", etiqueta: "Sector energía EE. UU. (XLE) · 5 años", anios: 5,
+      porque: "Un índice de todo el sector, menos volátil que una sola empresa: σ ≈\u00a026\u00a0%." },
+    { ticker: "GLD", etiqueta: "Oro (GLD) · 5 años", anios: 5,
+      porque: "Para un proyecto minero de oro: σ ≈\u00a019\u00a0%." },
+  ] },
   // Manada recibe una canasta (varias acciones): sus opciones vienen de CANASTAS (manada.js)
   { prefijo: "manada", nombre: "5 · Comportamiento en manada", canastas: true,
     series: CANASTAS.map((k) => ({ etiqueta: `${k.nombre} (${k.tickers.length})`, porque: k.porque, canasta: k })) },

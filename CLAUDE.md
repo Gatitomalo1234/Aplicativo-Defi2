@@ -22,8 +22,8 @@ la teoría se entiende, el foco es la **interpretación económica y de mercado*
 ## Modelos vistos en clase
 
 GBM → saltos de Merton → Ornstein-Uhlenbeck → browniano fraccional → comportamiento
-en manada (los compañeros presentaron CSAD, CSSD y LSV; usaron CSAD) → opciones reales (visto el
-10 nov 2026; falta definir método y tipos de opción).
+en manada (los compañeros presentaron CSAD, CSSD y LSV; usaron CSAD) → opciones reales (presentación
+de Julián Duarte y Felipe Pulido: árbol binomial CRR, caso de abandono de Venegas págs. 811–813).
 Machine learning: fuera del aplicativo por ahora.
 
 ## Documentos del profe (carpeta `contexto/`)
@@ -66,7 +66,6 @@ Machine learning: fuera del aplicativo por ahora.
 
 ## Pendiente de decidir
 
-- Opciones reales: método (binomial CRR / Black-Scholes) y tipos de opción.
 
 ## Revisión de los datos de Yahoo — reglas del taller vs estado actual
 
@@ -117,7 +116,12 @@ L = ⌊4(T/100)^(2/9)⌋ (verificado contra statsmodels: diferencia ~1e-13). LSV
 (necesita operaciones de fondos). Resultado honesto: con las canastas recomendadas NO hay
 evidencia significativa de manada (meme período completo p ≈ 0.06). Canastas en `CANASTAS`
 (manada.js); en Toma de datos se bajan como canasta y se recuerdan.
-F6 (opciones reales) EN PAUSA: depende de lo que presentaron los compañeros.
+F6 (opciones reales) hecha el 11 nov, pendiente de revisión: árbol CRR (arbolOpcionReal en
+modelos.js) con abandono, expansión y contracción (Venegas ec. 69.7, sec. 69.5.2, ec. 69.17).
+Arranca en el caso de la presentación (S0 = I0 = 90, V = 60, σ = ln 2, r = ln(4/3), 3 pasos) y lo
+reproduce: C0 = 95.69, c = 5.69 (la diapositiva dice 95.70 por redondear 181.67 en un paso
+intermedio). σ opcional de una empresa comparable (Toma de datos: EC, CIB, XLE, GLD). Gráfico
+de la paradoja de la volatilidad (c vs σ, solo donde q ∈ (0,1), σ > r√Δt).
 Textos «Qué explica / qué no» (5 modelos): borrador escrito con Claude el 11 nov a pedido de
 Nicolás, en viñetas con cifras que muestra el aplicativo. Revisar y pasar a palabras del equipo.
 Rediseño visual (F8) hecho el 11 nov, pendiente de revisión: ambiente de la app "Payno"

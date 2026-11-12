@@ -60,6 +60,7 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - `js/merton.js` — módulo de Merton (cada módulo se registra en `MODULOS`)
 - `js/ou.js` — módulo de Ornstein-Uhlenbeck
 - `js/fbm.js` — módulo del browniano fraccional
+- `js/opciones.js` — módulo de opciones reales (árbol binomial)
 - `js/manada.js` — módulo de manada (CSAD/CSSD) y canastas recomendadas
 - `js/tomadatos.js` — sección Toma de datos: series por modelo, guardadas, CSV propio, vista rápida
 - `datos/descarga_datos.py` — precarga la caché antes de la sustentación
@@ -89,11 +90,9 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 - **F5 — hecho (11 nov), en revisión**: Manada con CSAD y CSSD (forma estándar) sobre canastas
   reales (meme 2020-21, bancos 2006-09, tecnológicas); ventana de fechas, cola de CSSD,
   errores Newey-West. Sin simulación.
-- **F6**: Opciones reales (propuesta, por confirmar con lo visto en clase):
-  - árbol binomial CRR del curso aplicado al valor del proyecto
-  - σ del proyecto tomada de una empresa comparable en Yahoo Finance
-  - opciones de expandir, abandonar y esperar
-  - VPN tradicional frente a VPN expandido = VPN + valor de la flexibilidad
+- **F6 — hecho (11 nov), en revisión**: opciones reales con árbol CRR (abandono, expansión,
+  contracción), caso de la presentación de los compañeros, σ de una empresa comparable y
+  paradoja de la volatilidad. VPN modificado = VPN estático + c.
 - **F7**: Comparación honesta de los modelos contra datos reales (RMSE rolling, QQ-plot de colas)
 - **F8 — hecho (11 nov), en revisión**: rediseño completo (ver CLAUDE.md). Fuentes en
   `fuentes/` sin internet; servidor entrega `/fuentes/`.
@@ -101,4 +100,3 @@ Antes de la sustentación: `python datos/descarga_datos.py` para precargar las s
 
 ## Decisiones pendientes
 
-- Opciones reales: qué método y qué tipos de opción vio el profe en clase.

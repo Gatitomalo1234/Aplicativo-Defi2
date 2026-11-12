@@ -644,6 +644,49 @@ em { color: var(--acento); font-style: normal; font-size: 0.92em; }
 .datos-mercado .ancho-completo { flex: 1 1 300px; }
 .datos-mercado .ancho-completo input { width: 100%; font-family: var(--cifras); }
 
+/* ---- opciones reales ---- */
+.selector-tipo {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--ficha);
+  border-radius: 999px;
+}
+.selector-tipo button {
+  font: 500 13.5px var(--ui);
+  color: var(--tinta-2);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.selector-tipo button.activo { background: var(--marino); color: #fff; }
+.panel-grafico canvas#opciones-arbol { height: 400px; }
+.canvas-paradoja { width: 100%; height: 240px; display: block; }
+.nodo-clave {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radio-ficha);
+  background: #fdf6e3;
+  font-size: 13.5px;
+  color: #6b4a10;
+}
+.nodo-clave p { margin: 2px 0; max-width: none; }
+.nodo-clave .etiqueta { color: #9a5b00; font-weight: 600; font-size: 13px; }
+.nodo-clave .decision {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--marino);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
+.texto-paradoja { margin: 0 0 14px; font-size: 14px; color: var(--tinta-2); }
+#opciones-pasos .pasos { grid-template-columns: minmax(0, 1fr); }
+
 /* ---- cifra grande (kpi) ---- */
 .kpi { display: flex; flex-direction: column; }
 .kpi .tarjeta-cabeza h2 { font-size: 14px; font-weight: 500; color: var(--tinta-2); }

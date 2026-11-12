@@ -590,3 +590,70 @@ function dibujarDispersionCSAD(canvas, x, y, beta, extremos) {
   ctx.beginPath(); ctx.moveTo(lx, 10); ctx.lineTo(lx + 14, 10); ctx.stroke(); ctx.setLineDash([]);
   ctx.fillText("sin el término γ₂", lx + 18, 10);
 }
+
+// Opciones reales: árbol binomial con S y C en cada nodo (como en la presentación).
+// Los nodos donde conviene ejercer la opción van en ámbar. Hasta MAX_PASOS_DIBUJO pasos;
+// con más, solo se escribe un aviso (los resultados se muestran aparte).
+const MAX_PASOS_DIBUJO = 6;
+function dibujarArbol(canvas, arbol, accion, formato = (v) => v.toFixed(2)) {
+  if (!canvas.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1;
+  const ancho = canvas.clientWidth, alto = canvas.clientHeight;
+  canvas.width = ancho * dpr;
+  canvas.height = alto * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  const n = arbol.nodos.length - 1;
+  if (n > MAX_PASOS_DIBUJO) {
+    ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.font = ESTILO_GRAFICO.fuente;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(`El árbol tiene ${n} pasos (${((n + 1) * (n + 2)) / 2} nodos): se dibuja hasta ${MAX_PASOS_DIBUJO} pasos.`, ancho / 2, alto / 2 - 10);
+    ctx.fillText("Los resultados de abajo usan el árbol completo.", ancho / 2, alto / 2 + 12);
+    return;
+  }
+  const angosto = ancho < 520; // celular: menos margen y cajas solo con los números
+  const lado = angosto ? 30 : 52;
+  const margen = { izq: lado, der: lado, arr: 48, aba: 40 }; // espacio para «t = …» arriba y el rótulo de abajo
+  const caja = { w: Math.min(92, (ancho - margen.izq - margen.der) / (n + 1) - 6), h: 40 };
+  const conRotulo = caja.w >= 78; // «S = 720.00» cabe; si no, solo el número
+  const px = (t) => margen.izq + (n === 0 ? 0 : (t / n) * (ancho - margen.izq - margen.der));
+  const py = (t, j) => { // nivel = subidas − bajadas, de +n (arriba) a −n (abajo)
+    const nivel = t - 2 * j;
+    return margen.arr + ((n - nivel) / (2 * n || 1)) * (alto - margen.arr - margen.aba);
+  };
+  // encabezados t = 0, 1, ...
+  ctx.font = "600 11.5px Geist, sans-serif"; ctx.fillStyle = ESTILO_GRAFICO.texto;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let t = 0; t <= n; t++) ctx.fillText(`t = ${t}`, px(t), 4);
+  // ramas
+  ctx.strokeStyle = "#B8C4D4"; ctx.lineWidth = 1.2;
+  for (let t = 0; t < n; t++) {
+    for (let j = 0; j <= t; j++) {
+      for (const k of [j, j + 1]) {
+        ctx.beginPath(); ctx.moveTo(px(t), py(t, j)); ctx.lineTo(px(t + 1), py(t + 1, k)); ctx.stroke();
+      }
+    }
+  }
+  // nodos
+  for (let t = 0; t <= n; t++) {
+    arbol.nodos[t].forEach((nodo, j) => {
+      const x = px(t) - caja.w / 2, y = py(t, j) - caja.h / 2;
+      ctx.fillStyle = nodo.ejerce ? "#FDF1D6" : t === 0 ? "#EAF1FD" : "#FFFFFF";
+      ctx.strokeStyle = nodo.ejerce ? "#E3A63B" : t === 0 ? ESTILO_GRAFICO.mediana : "#9DB3D6";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.roundRect(x, y, caja.w, caja.h, 9); ctx.fill(); ctx.stroke();
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = ESTILO_GRAFICO.texto; ctx.font = "10.5px 'Geist Mono', monospace";
+      ctx.font = conRotulo ? "10.5px 'Geist Mono', monospace" : "9.5px 'Geist Mono', monospace";
+      ctx.fillText(conRotulo ? `S = ${formato(nodo.S)}` : formato(nodo.S), px(t), py(t, j) - 9);
+      ctx.fillStyle = nodo.ejerce ? "#9A5B00" : ESTILO_GRAFICO.historico; ctx.font = "600 11.5px 'Geist Mono', monospace";
+      if (!conRotulo) ctx.font = "600 10.5px 'Geist Mono', monospace";
+      ctx.fillText(conRotulo ? `C = ${formato(nodo.C)}` : formato(nodo.C), px(t), py(t, j) + 7);
+      if (nodo.ejerce) {
+        ctx.font = "600 9px Geist, sans-serif"; ctx.fillStyle = "#9A5B00";
+        ctx.fillText(accion, px(t), y + caja.h + 8);
+      }
+    });
+  }
+}

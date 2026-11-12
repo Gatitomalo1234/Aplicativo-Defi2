@@ -98,7 +98,7 @@ function encabezadoDatos(datos) {
 const CARGADORES = {};      // prefijo -> alCargar(datos)
 const SOLTADORES = {};      // prefijo -> alSoltar(): vuelve a los parámetros de ejemplo
 const SERIES_EN_USO = {};   // prefijo -> datos de la serie que está usando
-const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm" }; // reciben una serie
+const NOMBRES_MODULO = { gbm: "GBM", merton: "Merton", ou: "OU", fbm: "fBm", opciones: "Opciones" }; // reciben una serie
 const NOMBRE_MANADA = "Manada"; // recibe una canasta (varias series)
 
 // Una canasta es un grupo de series para el módulo de manada.
@@ -145,6 +145,8 @@ function pintarSerieEnUso(prefijo) {
          <span>${d.precios.length} precios</span><span>${d.fuente}</span>`
       : prefijo === "manada"
         ? `<b>Sin canasta</b><span>elige una en Toma de datos</span>`
+      : prefijo === "opciones"
+        ? `<b>Sin comparable</b><span>σ fijada a mano</span>`
         : `<b>Sin serie</b><span>el simulador usa parámetros de ejemplo</span>`;
   }
   const quitar = $(`${prefijo}-quitar`);
@@ -192,6 +194,8 @@ function soltarSerie(prefijo) {
     estado.className = "estado";
     estado.textContent = prefijo === "ou"
       ? "Sin serie: volvió al ejercicio 3 del taller (liquidez en millones de USD)."
+      : prefijo === "opciones"
+        ? "Sin comparable: σ volvió a la del caso de la presentación (ln 2 ≈ 69.3 %)."
       : prefijo === "manada"
         ? "Sin canasta: elige una en Toma de datos."
         : "Sin serie: el simulador volvió a los parámetros de ejemplo.";
